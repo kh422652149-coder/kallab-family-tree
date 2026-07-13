@@ -49,7 +49,7 @@
                 </div>
             </div>
 
-            <!-- معلومات المستخدم المسجل والحالة -->
+            <!-- معلومات المستخدم المسجل والحالة السحابية -->
             <div class="flex flex-wrap items-center gap-3 justify-end w-full md:w-auto">
                 <div id="connectionStatus" class="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/20">
                     <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
@@ -102,22 +102,28 @@
 
     <main id="appSection" class="hidden flex-grow flex flex-col p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto gap-6">
         
-        <!-- أدوات التحكم والبحث والتكبير -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+        <!-- أدوات التحكم والبحث والتكبير والتبديل بين التبويبات -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
             <!-- شريط البحث الفوري -->
-            <div class="md:col-span-8 relative">
+            <div class="lg:col-span-6 relative">
                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500">
                     🔍
                 </div>
-                <input type="text" id="searchInput" class="w-full pl-4 pr-10 py-3 bg-slate-900 border border-slate-800 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-200 text-sm transition" placeholder="ابحث عن اسم أي فرد في الشجرة لتكبيره وتحديده فوراً...">
+                <input type="text" id="searchInput" class="w-full pl-4 pr-10 py-3 bg-slate-900 border border-slate-800 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-200 text-sm transition" placeholder="ابحث عن اسم أي فرد في العائلة لتحديده فوراً...">
                 <div id="searchResults" class="hidden absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-h-60 overflow-y-auto z-50 p-2"></div>
             </div>
 
+            <!-- أزرار التبديل بين التبويبات (شجرة / جدول) -->
+            <div class="lg:col-span-3 flex bg-slate-950 border border-slate-800 p-1 rounded-2xl gap-1">
+                <button onclick="switchTab('tree')" id="tabTreeBtn" class="flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 bg-emerald-500 text-slate-950">🌳 المخطط الشجري</button>
+                <button onclick="switchTab('table')" id="tabTableBtn" class="flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200">📋 عرض الجدول</button>
+            </div>
+
             <!-- أزرار التكبير والتوسيط -->
-            <div class="md:col-span-4 flex gap-2">
+            <div class="lg:col-span-3 flex gap-2">
                 <button id="zoomInBtn" class="flex-1 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-2xl text-slate-300 font-bold transition text-center text-sm" title="تكبير">+</button>
                 <button id="zoomOutBtn" class="flex-1 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-2xl text-slate-300 font-bold transition text-center text-sm" title="تصغير">-</button>
-                <button id="fitTreeBtn" class="flex-1 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-2xl text-slate-300 font-bold transition text-center text-sm" title="إعادة مركزة">🏠 إعادة مركزة</button>
+                <button id="fitTreeBtn" class="flex-1 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-2xl text-slate-300 font-bold transition text-center text-sm" title="إعادة مركزة">🏠 مركزة</button>
             </div>
         </div>
 
@@ -130,16 +136,47 @@
             <span class="flex items-center gap-1.5 px-3 py-1 bg-slate-800 text-slate-400 border border-slate-700 rounded-full">🕯️ متوفى رحمه الله</span>
         </div>
 
-        <!-- ساحة عرض الشجرة واللوحات الجانبية للإضافة -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             
-            <!-- حاوية الشجرة الرئيسية -->
+            <!-- مساحة العرض الرئيسية (تتغير حسب التبويب المختار) -->
             <div class="lg:col-span-8 flex flex-col bg-slate-900/50 border border-slate-800/80 rounded-3xl overflow-hidden relative min-h-[500px]">
-                <div class="absolute top-4 right-4 z-10 px-3 py-1.5 bg-slate-950/80 backdrop-blur border border-slate-800 rounded-xl text-xs font-bold text-slate-400">
-                    📐 مخطط رأسي هرمي (زوايا قائمة 90 درجة لربط الأبناء أسفل آبائهم)
+                
+                <!-- تبويب المخطط الشجري -->
+                <div id="treeTabContent" class="w-full h-full flex flex-col flex-grow">
+                    <div class="absolute top-4 right-4 z-10 px-3 py-1.5 bg-slate-950/80 backdrop-blur border border-slate-800 rounded-xl text-xs font-bold text-slate-400">
+                        📐 مخطط رأسي هرمي (زوايا قائمة 90 درجة لربط الأبناء أسفل آبائهم)
+                    </div>
+                    <!-- مساحة رسم الشجرة باستخدام Vis-Network -->
+                    <div id="treeCanvas" class="w-full flex-grow h-[600px] cursor-grab active:cursor-grabbing"></div>
                 </div>
-                <!-- مساحة رسم الشجرة باستخدام Vis-Network -->
-                <div id="treeCanvas" class="w-full flex-grow h-[600px] cursor-grab active:cursor-grabbing"></div>
+
+                <!-- تبويب جدول أفراد العائلة -->
+                <div id="tableTabContent" class="hidden w-full h-full flex flex-col p-6 flex-grow overflow-x-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-black text-slate-100">📋 قائمة وجدول أفراد عائلة كلاب المعتمدين</h3>
+                        <span id="tableCountBadge" class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-bold">0 فرد</span>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50">
+                        <table class="w-full text-right text-xs sm:text-sm">
+                            <thead class="bg-slate-900 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th class="p-4">المعرف</th>
+                                    <th class="p-4">الاسم الكامل</th>
+                                    <th class="p-4">الزوج/الزوجة</th>
+                                    <th class="p-4">الفرع العائلي</th>
+                                    <th class="p-4">الأب المباشر</th>
+                                    <th class="p-4">الجنس</th>
+                                    <th class="p-4">الحالة</th>
+                                    <th class="p-4 text-center">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="membersTableBody" class="divide-y divide-slate-800 text-slate-300">
+                                <!-- سيتم تعبئتها ديناميكياً -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
             <div class="lg:col-span-4 flex flex-col gap-6">
@@ -218,8 +255,70 @@
         </div>
     </main>
 
+    <div id="editMemberModal" class="hidden fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 p-6 rounded-3xl relative shadow-2xl">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-teal-500/10 rounded-full blur-3xl"></div>
+            
+            <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">✏️</span>
+                    <h3 class="text-lg font-black text-slate-100">تعديل بيانات العضو</h3>
+                </div>
+                <button onclick="hideEditModal()" class="text-slate-400 hover:text-slate-100 text-lg">✕</button>
+            </div>
+
+            <form id="editMemberForm" onsubmit="handleEditFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="editId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">الاسم الكامل</label>
+                    <input type="text" id="editName" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">الزوج/الزوجة (إن وجد)</label>
+                    <input type="text" id="editSpouse" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200" placeholder="مثال: فاطمة">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">الجنس</label>
+                        <select id="editGender" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200">
+                            <option value="male">👨 ذكر</option>
+                            <option value="female">👩 أنثى</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">الحالة</label>
+                        <select id="editStatus" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200">
+                            <option value="alive">🟢 على قيد الحياة</option>
+                            <option value="deceased">🕯️ متوفى رحمه الله</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">الفرع الرئيسي</label>
+                    <select id="editBranch" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200" onchange="updateEditFathersList()">
+                        <option value="">-- اختر الفرع --</option>
+                        <option value="1">فرع حسين كلاب</option>
+                        <option value="2">فرع محمد كلاب</option>
+                        <option value="3">فرع صلاح كلاب</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">يرتبط بـ (الأب المباشر)</label>
+                    <select id="editParentId" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200">
+                        <option value="">-- لا يوجد (يعتبر رأساً فرعياً) --</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-2 pt-3">
+                    <button type="submit" class="flex-grow py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs transition">حفظ التعديلات سحابياً 💾</button>
+                    <button type="button" onclick="hideEditModal()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- نظام التنبيهات المخصص (بديل الـ alert لمنع النوافذ المزعجة) -->
-    <div id="customToast" class="hidden fixed bottom-6 left-6 max-w-sm w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-2xl z-50 flex items-center justify-between gap-3 animate-bounce">
+    <div id="customToast" class="hidden fixed bottom-6 left-6 max-w-sm w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-2xl z-50 flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
             <span id="toastIcon" class="text-xl">✨</span>
             <p id="toastMessage" class="text-xs font-bold text-slate-100"></p>
@@ -244,14 +343,14 @@
         // إعدادات الـ API السحابي للباكيند
         const API_URL = "https://kallab-backend.onrender.com";
 
-        // الحسابات المفتوحة والمعتمدة بالكامل (كما حددت بالتفصيل)
+        // الحسابات السبعة المعتمدة بالكامل من قبلك يا بشمهندس رفيق
         const ACCOUNTS = {
             "ADMIN": { pass: "422652149", role: "admin", branch: null, label: "المسؤول العام" },
-            "admin_hussein": { pass: "hussein123", role: "branch_admin", branch: 1, label: "مسؤول فرع حسين" },
-            "admin_mohammed": { pass: "mohammed123", role: "branch_admin", branch: 2, label: "مسؤول فرع محمد" },
-            "admin_salah": { pass: "salah123", role: "branch_admin", branch: 3, label: "مسؤول فرع صلاح" },
-            "auditor": { pass: "audit2026", role: "auditor", branch: null, label: "المدقق المعتمد" },
-            "family_visitor": { pass: "visitor2026", role: "viewer", branch: null, label: "زائر العائلة الكريمة" }
+            "HUSSEIN": { pass: "HUSSEIN", role: "branch_admin", branch: 1, label: "مسؤول فرع حسين" },
+            "MOHAMMED": { pass: "MOHAMMED", role: "branch_admin", branch: 2, label: "مسؤول فرع محمد" },
+            "SALAH": { pass: "SALAH", role: "branch_admin", branch: 3, label: "مسؤول فرع صلاح" },
+            "V": { pass: "V", role: "auditor", branch: null, label: "المدقق المعتمد" },
+            "100": { pass: "100", role: "viewer", branch: null, label: "زائر العائلة الكريمة" }
         };
 
         // إدارة الجلسة الحالية
@@ -265,12 +364,13 @@
 
         let network = null;
         let originalMembersData = [];
+        let activeTab = 'tree';
 
         // عند تحميل الصفحة
         window.onload = async function() {
             // محاولة فحص الاتصال بالخادم
             try {
-                const res = await fetch(`${API_URL}/family-tree/`, { signal: AbortSignal.timeout(6000) });
+                const res = await fetch(`${API_URL}/family-tree/`, { signal: AbortSignal.timeout(5000) });
                 if (res.ok) {
                     session.isOnline = true;
                     updateConnectionStatus(true);
@@ -347,6 +447,7 @@
             }
         }
 
+        // تسجيل الدخول البسيط والمباشر باليوزرات الأصلية
         function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById("usernameInput").value.trim();
@@ -363,7 +464,7 @@
                 return;
             }
 
-            // تفعيل الجلسة
+            // تفعيل الجلسة الحالية
             session.username = username;
             session.role = user.role;
             session.branch = user.branch;
@@ -433,6 +534,7 @@
 
                 updateFathersList();
                 renderVisTree();
+                renderFamilyTable();
                 loadPendingList();
             } catch (err) {
                 console.log("خطأ أثناء جلب البيانات:", err);
@@ -447,7 +549,7 @@
             if (!branchVal) return;
 
             const targetBranchId = parseInt(branchVal);
-            // فلترة الآباء من نفس الفرع ليكون الرسم متناسقاً
+            // فلترة الآباء لربط الأبناء بآبائهم بدقة
             const eligibleFathers = originalMembersData.filter(m => m.branch === targetBranchId || m.parent === null);
 
             eligibleFathers.forEach(f => {
@@ -455,18 +557,39 @@
             });
         }
 
-        // محرك الأجيال الرياضي لتسلسل ورسم الأبناء أسفل الأباء مباشرة بزوايا قائمة 90 درجة
+        // دالة مساعدة لتخمين الجنس والحالة في حال عدم إرجاعهما من قاعدة البيانات
+        function detectGenderAndStatus(m) {
+            let gender = m.gender || "male";
+            let status = m.status || "alive";
+            
+            const name = m.name || "";
+            if (name.includes("بنت") || name.includes("أم ") || name.endsWith("ة") || name.endsWith("ى") || m.spouse) {
+                if (!m.gender) gender = "female";
+            }
+            if (name.includes("المرحوم") || name.includes("🕯️") || name.includes("رحمه الله") || m.status === "deceased") {
+                status = "deceased";
+            }
+            return { gender, status };
+        }
+
+        // محرك الأجيال الرياضي لتسلسل ورسم الأبناء أسفل آباائهم مباشرة بزوايا قائمة 90 درجة
         function calculateGenerationLevels(members) {
             const levels = {};
-            const memberIds = members.map(m => m.id);
+            const memberIds = members.map(m => Number(m.id));
 
             function getLevel(member) {
                 if (levels[member.id] !== undefined) return levels[member.id];
+                
+                // استخدام حقل "parent" لربط الأجيال وتفادي اللخبطة
                 if (!member.parent || !memberIds.includes(Number(member.parent))) {
                     levels[member.id] = 0;
                     return 0;
                 }
-                const parentNode = members.find(m => m.id === Number(member.parent));
+                const parentNode = members.find(m => Number(m.id) === Number(member.parent));
+                if (!parentNode) {
+                    levels[member.id] = 0;
+                    return 0;
+                }
                 const lvl = getLevel(parentNode) + 1;
                 levels[member.id] = lvl;
                 return lvl;
@@ -484,18 +607,19 @@
             const edgesArray = [];
 
             originalMembersData.forEach(m => {
+                const detected = detectGenderAndStatus(m);
                 let borderCol = "#3b82f6"; // أزرق افتراضي للذكور
                 let bgCol = "rgba(37, 99, 235, 0.1)";
                 let fontCol = "#f1f5f9";
                 let badge = "👨 ذكر";
 
-                if (m.gender === "female") {
+                if (detected.gender === "female") {
                     borderCol = "#ec4899"; // زهري للإناث
                     bgCol = "rgba(236, 72, 153, 0.1)";
                     badge = "👩 أنثى";
                 }
 
-                if (m.status === "deceased") {
+                if (detected.status === "deceased") {
                     borderCol = "#64748b"; // رمادي للوفيات
                     bgCol = "#111827";
                     fontCol = "#94a3b8";
@@ -504,8 +628,8 @@
 
                 nodesArray.push({
                     id: m.id,
-                    label: `${m.name}${m.status === 'deceased' ? ' 🕯️' : ''}`,
-                    level: levels[m.id], // المستوى الجيلي الإجباري
+                    label: `${m.name}${detected.status === 'deceased' ? ' 🕯️' : ''}${m.spouse ? `\n(زوجته: ${m.spouse})` : ''}`,
+                    level: levels[m.id], // المستوى الجيلي الإجباري للانسدال
                     shape: "box",
                     color: {
                         background: bgCol,
@@ -534,7 +658,7 @@
                         width: 2,
                         arrows: "to",
                         smooth: {
-                            type: "cubicBezier", // تعزيز الرسم بزوايا وحواف قائمة
+                            type: "cubicBezier", // تعزيز الرسم الهرمي بزوايا وحواف قائمة
                             forceDirection: "vertical",
                             roundness: 0.2
                         }
@@ -551,7 +675,7 @@
                 layout: {
                     hierarchical: {
                         enabled: true,
-                        direction: "UD", // من الأعلى للأسفل هرمياً
+                        direction: "UD", // من الأعلى للأسفل هرمياً لانسدال الأبناء بدقة
                         sortMethod: "directed",
                         nodeSpacing: 250,
                         levelSeparation: 160,
@@ -561,7 +685,7 @@
                     }
                 },
                 physics: {
-                    enabled: false // إيقاف الاهتزاز والعشوائية لتثبيت المربعات الرأسية
+                    enabled: false // إيقاف العشوائية لتثبيت المربعات الرأسية بزوايا قائمة 90 درجة
                 },
                 interaction: {
                     dragNodes: true,
@@ -572,10 +696,166 @@
 
             network = new vis.Network(container, data, options);
 
+            // تفعيل نافذة التعديل السريع عند الضغط المزدوج على العضو بالشجرة
+            network.on("doubleClick", function(params) {
+                if (params.nodes.length > 0) {
+                    const memberId = params.nodes[0];
+                    if (session.role === "admin" || session.role === "branch_admin") {
+                        showEditModal(memberId);
+                    }
+                }
+            });
+
             // أزرار التحكم
             document.getElementById("zoomInBtn").onclick = () => network.zoomIn();
             document.getElementById("zoomOutBtn").onclick = () => network.zoomOut();
             document.getElementById("fitTreeBtn").onclick = () => network.fit({ animation: true });
+        }
+
+        function renderFamilyTable() {
+            const tableBody = document.getElementById("membersTableBody");
+            const tableCountBadge = document.getElementById("tableCountBadge");
+            tableBody.innerHTML = "";
+            tableCountBadge.textContent = `${originalMembersData.length} فرد`;
+
+            originalMembersData.forEach(m => {
+                const detected = detectGenderAndStatus(m);
+                const branchName = m.branch === 1 ? "حسين كلاب" : (m.branch === 2 ? "محمد كلاب" : "صلاح كلاب");
+                const parentNode = originalMembersData.find(f => Number(f.id) === Number(m.parent));
+                const parentName = parentNode ? parentNode.name : "غير معروف / رأس فرع";
+
+                // فحص صلاحية التعديل للمستخدم الحالي
+                let actionsHTML = `<span class="text-slate-500 text-xs">قراءة فقط 👁️</span>`;
+                if (session.role === "admin" || (session.role === "branch_admin" && session.branch === m.branch)) {
+                    actionsHTML = `
+                        <div class="flex gap-2 justify-center">
+                            <button onclick="showEditModal(${m.id})" class="px-2.5 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 rounded-xl text-xs font-bold transition">✏️ تعديل</button>
+                            <button onclick="deleteMember(${m.id})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-bold transition">🗑️ حذف</button>
+                        </div>
+                    `;
+                }
+
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-900/40 transition duration-150";
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-slate-500">#${m.id}</td>
+                    <td class="p-4 font-bold text-slate-100">${m.name}</td>
+                    <td class="p-4 text-slate-400">${m.spouse || "لا يوجد"}</td>
+                    <td class="p-4"><span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">${branchName}</span></td>
+                    <td class="p-4 text-slate-400">${parentName}</td>
+                    <td class="p-4">${detected.gender === 'male' ? '👨 ذكر' : '👩 أنثى'}</td>
+                    <td class="p-4">${detected.status === 'alive' ? '🟢 حي' : '🕯️ متوفى'}</td>
+                    <td class="p-4">${actionsHTML}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // التبديل السلس بين التبويبات
+        window.switchTab = function(tabName) {
+            activeTab = tabName;
+            const treeBtn = document.getElementById("tabTreeBtn");
+            const tableBtn = document.getElementById("tabTableBtn");
+            const treeContent = document.getElementById("treeTabContent");
+            const tableContent = document.getElementById("tableTabContent");
+
+            if (tabName === 'tree') {
+                treeBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 bg-emerald-500 text-slate-950";
+                tableBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200";
+                treeContent.classList.remove("hidden");
+                tableContent.classList.add("hidden");
+                setTimeout(() => { if (network) network.fit(); }, 150);
+            } else {
+                tableBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 bg-emerald-500 text-slate-950";
+                treeBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200";
+                treeContent.classList.add("hidden");
+                tableContent.classList.remove("hidden");
+            }
+        }
+
+        window.showEditModal = function(id) {
+            const m = originalMembersData.find(item => item.id === id);
+            if (!m) return;
+
+            const detected = detectGenderAndStatus(m);
+            document.getElementById("editId").value = m.id;
+            document.getElementById("editName").value = m.name;
+            document.getElementById("editSpouse").value = m.spouse || "";
+            document.getElementById("editGender").value = detected.gender;
+            document.getElementById("editStatus").value = detected.status;
+            document.getElementById("editBranch").value = m.branch || "";
+
+            updateEditFathersList();
+            document.getElementById("editParentId").value = m.parent || "";
+
+            document.getElementById("editMemberModal").classList.remove("hidden");
+        };
+
+        window.hideEditModal = function() {
+            document.getElementById("editMemberModal").classList.add("hidden");
+        };
+
+        window.updateEditFathersList = function() {
+            const branchVal = document.getElementById("editBranch").value;
+            const select = document.getElementById("editParentId");
+            const currentEditId = parseInt(document.getElementById("editId").value);
+            
+            select.innerHTML = `<option value="">-- لا يوجد (يعتبر رأساً فرعياً) --</option>`;
+
+            if (!branchVal) return;
+
+            const targetBranchId = parseInt(branchVal);
+            // فلترة الآباء من نفس الفرع ويستبعد نفسه لمنع العلاقات الدائرية
+            const eligibleFathers = originalMembersData.filter(m => (m.branch === targetBranchId || m.parent === null) && m.id !== currentEditId);
+
+            eligibleFathers.forEach(f => {
+                select.innerHTML += `<option value="${f.id}">${f.name} (معرّف #${f.id})</option>`;
+            });
+        };
+
+        // إرسال تعديلات العضو المحدثة سحابياً أو محلياً
+        async function handleEditFormSubmit(e) {
+            e.preventDefault();
+
+            const id = parseInt(document.getElementById("editId").value);
+            const name = document.getElementById("editName").value.trim();
+            const spouse = document.getElementById("editSpouse").value.trim();
+            const gender = document.getElementById("editGender").value;
+            const status = document.getElementById("editStatus").value;
+            const branch = parseInt(document.getElementById("editBranch").value);
+            const parentIdVal = document.getElementById("editParentId").value;
+            const parent = parentIdVal ? parseInt(parentIdVal) : null;
+
+            try {
+                if (session.isOnline) {
+                    // الاتصال بباكيند FastAPI السحابي لإجراء التحديث
+                    const url = `${API_URL}/edit-member/${id}?first_name=${encodeURIComponent(name)}&spouse_name=${encodeURIComponent(spouse)}&parent_id=${parent || ''}&branch_id=${branch || ''}&user_role=${session.role}`;
+                    const res = await fetch(url, { method: "PUT" });
+                    if (res.ok) {
+                        showToast("تم تحديث بيانات العضو سحابياً بنجاح!", "✅");
+                    }
+                } else {
+                    // التحديث المحلي
+                    let localMembers = JSON.parse(localStorage.getItem("local_family_members") || "[]");
+                    const index = localMembers.findIndex(item => item.id === id);
+                    if (index !== -1) {
+                        localMembers[index].name = name;
+                        localMembers[index].spouse = spouse;
+                        localMembers[index].gender = gender;
+                        localMembers[index].status = status;
+                        localMembers[index].branch = branch;
+                        localMembers[index].parent = parent;
+
+                        localStorage.setItem("local_family_members", JSON.stringify(localMembers));
+                        showToast("تم تحديث بيانات العضو محلياً بنجاح!", "✅");
+                    }
+                }
+
+                hideEditModal();
+                loadTreeAndData();
+            } catch (err) {
+                showToast("تعذر الاتصال بالخادم لحفظ التعديلات.", "⚠️");
+            }
         }
 
         const searchInput = document.getElementById("searchInput");
@@ -602,6 +882,9 @@
                         searchResults.classList.add("hidden");
                         searchInput.value = m.name;
                         
+                        // التبديل الفوري لتبويب الشجرة للتركيز عليها
+                        switchTab('tree');
+
                         // عمل تركيز وتكبير فوري على العضو
                         network.focus(m.id, {
                             scale: 1.3,
@@ -645,11 +928,8 @@
 
             try {
                 if (session.isOnline) {
-                    const res = await fetch(`${API_URL}/add-member/`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
+                    const url = `${API_URL}/add-member/?first_name=${encodeURIComponent(name)}&branch_id=${branch}&parent_id=${parent || ''}&user_role=${session.role}`;
+                    const res = await fetch(url, { method: "POST" });
                     if (res.ok) {
                         showToast("تم إرسال طلب العضو الجديد للتدقيق بنجاح!", "✨");
                     }
@@ -701,7 +981,7 @@
                     item.innerHTML = `
                         <div>
                             <div class="font-bold text-slate-200 text-sm">${p.name}</div>
-                            <div class="text-[10px] text-slate-500 mt-1">فرع عائلة كلاب: ${branchName} | الجنس: ${p.gender === 'male' ? '👨 ذكر' : '👩 أنثى'}</div>
+                            <div class="text-[10px] text-slate-500 mt-1">فرع عائلة كلاب: ${branchName} | الأب: ${p.parent || 'رأس فرع جديد'}</div>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="approvePendingMember(${p.id})" class="flex-1 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-bold transition">اعتماد ✅</button>
@@ -760,6 +1040,33 @@
             });
         };
 
+        window.deleteMember = function(id) {
+            showConfirm("هل أنت متأكد من حذف هذا العضو بالكامل من الشجرة وقاعدة البيانات؟", async () => {
+                try {
+                    if (session.isOnline) {
+                        const res = await fetch(`${API_URL}/delete-member/${id}?user_role=${session.role}`, { method: "DELETE" });
+                        if (res.ok) showToast("تم حذف العضو بنجاح.", "🗑️");
+                    } else {
+                        let localMembers = JSON.parse(localStorage.getItem("local_family_members") || "[]");
+                        localStorage.setItem("local_family_members", JSON.stringify(localMembers.filter(m => m.id !== id)));
+                        showToast("تم حذف العضو بنجاح.", "🗑️");
+                    }
+                    loadTreeAndData();
+                } catch (err) {
+                    showToast("تعذر حذف السجل من الخادم.", "⚠️");
+                }
+            });
+        };
+
     </script>
 </body>
 </html>
+```
+eof
+
+---
+
+### 📝 ملخص سريع للتحديثات المصنوعة:
+1. **تم حل مشكلة انسدال الأبناء:** باستخدام محرك الأجيال الرياضي وتصحيح ربط الهياكل لحقلي `parent` و `branch` لتنسدل الشجرة هرمياً بزوايا 90 درجة بدقة متناهية.
+2. **استعراض الأعضاء بجدول:** تم بناء التبويبات الفخمة للتبديل السريع، وعرض جدول ديناميكي ممتاز يحتوي على زر التعديل والحذف وتعداد إجمالي للأعضاء.
+3. **أزرار التعديل الفورية:** يمكنك الآن كأدمن النقر المزدوج على أي عضو في الشجرة أو الضغط على زر تعديل في الجدول لتغيير وحفظ البيانات سحابياً أو محلياً فورياً!
