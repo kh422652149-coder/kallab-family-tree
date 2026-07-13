@@ -54,13 +54,13 @@
         </div>
         
         <div class="flex flex-wrap items-center gap-4">
-            <!-- حالة الاتصال بالخادم المحلي بالمنفذ 1025 -->
+            <!-- حالة الاتصال بالخادم السحابي أو المحلي -->
             <div id="connectionStatus" class="flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold bg-amber-500/10 border-amber-500/30 text-amber-400">
                 <span class="relative flex h-2 w-2">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                 </span>
-                <span id="statusText">جاري فحص الاتصال بالخادم...</span>
+                <span id="statusText">جاري فحص الاتصال بالخادم السحابي...</span>
             </div>
 
             <!-- بطاقة هوية المستخدم النشط المحدثة لعائلة كلاب -->
@@ -448,6 +448,7 @@
     </div>
 
     <script>
+        // الرابط السحابي الافتراضي والمباشر لمنصة Render لعائلة كلاب
         const API_URL = "https://kallab-backend.onrender.com";
         let isSimulationMode = false;
         
@@ -456,7 +457,7 @@
         let activeBranch = null;
         let loggedInUser = null;
 
-        // الحسابات المعتمدة بدقة لقطة الشاشة والبيانات المطلوبة لـ "عائلة كلاب"
+        // الحسابات المعتمدة بدقة لعائلة كلاب
         const systemUsers = {
             "ADMIN": { password: "422652149", role: "admin", branch: null, label: "المسؤول العام" },
             "HUSSEN": { password: "100200300", role: "branch_admin", branch: 1, label: "مسؤول فرع حسين" },
@@ -658,18 +659,20 @@
             const statusText = document.getElementById("statusText");
 
             try {
-                const response = await fetch(`${API_URL}/family-tree/`, { signal: AbortSignal.timeout(1500) });
+                // مهلة انتظار 20 ثانية لتمنح السيرفر السحابي الوقت الكافي للاستيقاظ بنجاح
+                const response = await fetch(`${API_URL}/family-tree/`, { signal: AbortSignal.timeout(20000) });
                 if (response.ok) {
                     isSimulationMode = false;
                     statusDiv.className = "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
-                    statusText.innerHTML = '<i class="fa-solid fa-server ml-1"></i> متصل بخادم Python المحلي (FastAPI)';
+                    statusText.innerHTML = '<i class="fa-solid fa-cloud ml-1"></i> متصل بخادم Python السحابي (Render)';
                 } else {
-                    throw new Error("سيرفر بايثون غير متصل");
+                    throw new Error("فشل في الاستجابة");
                 }
             } catch (err) {
                 isSimulationMode = true;
                 statusDiv.className = "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold bg-blue-500/10 border-blue-500/30 text-blue-400";
                 statusText.innerHTML = '<i class="fa-solid fa-circle-nodes ml-1"></i> نمط المحاكاة الذكي نشط (عائلة كلاب)';
+                fetchDataAndRenderTree();
             }
         }
 
@@ -1179,7 +1182,7 @@
             setTimeout(() => modal.classList.add("hidden"), 300);
         }
 
-        function submitMemberEdit(event) {
+        async function submitMemberEdit(event) {
             event.preventDefault();
             if (activeRole !== "admin") return;
 
@@ -1191,22 +1194,41 @@
             const fatherVal = document.getElementById("editMemberFather").value;
             const father = fatherVal ? parseInt(fatherVal) : null;
 
-            const members = JSON.parse(localStorage.getItem(mockDatabaseKey)) || [];
-            const index = members.findIndex(m => m.id === id);
+            if (isSimulationMode) {
+                const members = JSON.parse(localStorage.getItem(mockDatabaseKey)) || [];
+                const index = members.findIndex(m => m.id === id);
 
-            if (index !== -1) {
-                members[index].name = name;
-                members[index].spouse = spouse || null;
-                members[index].branch = branch;
-                members[index].subBranch = subBranch || null;
-                members[index].parent = father;
+                if (index !== -1) {
+                    members[index].name = name;
+                    members[index].spouse = spouse || null;
+                    members[index].branch = branch;
+                    members[index].subBranch = subBranch || null;
+                    members[index].parent = father;
 
-                localStorage.setItem(mockDatabaseKey, JSON.stringify(members));
-                showToast(`تم تعديل بيانات (${name}) وتحديث الشجرة والجداول فورياً.`, "success", "تم التعديل");
-                closeEditModal();
-                
-                fetchDataAndRenderTree();
-                renderBranchTable();
+                    localStorage.setItem(mockDatabaseKey, JSON.stringify(members));
+                    showToast(`تم تعديل بيانات (${name}) وتحديث الشجرة والجداول فورياً.`, "success", "تم التعديل");
+                    closeEditModal();
+                    fetchDataAndRenderTree();
+                    renderBranchTable();
+                }
+            } else {
+                let url = `${API_URL}/edit-member/${id}?first_name=${encodeURIComponent(name)}&spouse_name=${encodeURIComponent(spouse)}&branch_id=${branch}&user_role=${activeRole}`;
+                if (father) url += `&parent_id=${father}`;
+                if (subBranch) url += `&sub_branch=${encodeURIComponent(subBranch)}`;
+
+                try {
+                    const response = await fetch(url, { method: "PUT" });
+                    if (response.ok) {
+                        showToast(`تم تعديل بيانات العضو (${name}) بنجاح في السحاب!`, "success", "تم التعديل السحابي");
+                        closeEditModal();
+                        fetchDataAndRenderTree();
+                        renderBranchTable();
+                    } else {
+                        showToast("فشل تعديل البيانات السحابية، يرجى التحقق من المدخلات.", "error");
+                    }
+                } catch (err) {
+                    showToast("خطأ اتصال أثناء تعديل البيانات السحابية.", "error");
+                }
             }
         }
 
@@ -1428,9 +1450,10 @@
                 handleMainBranchChange();
                 applyUserSession(JSON.parse(sessionStorage.getItem("family_session_kallab")));
             } else {
+                // الربط السحابي الدقيق المتطابق مع الباكيند السحابي عبر parent_id
                 let url = `${API_URL}/add-member/?first_name=${encodeURIComponent(name)}&spouse_name=${encodeURIComponent(spouse)}&branch_id=${branch}&user_role=${activeRole}`;
                 if (activeBranch) url += `&user_branch=${activeBranch}`;
-                if (father) url += `&father_id=${father}`;
+                if (father) url += `&parent_id=${father}`;
                 if (finalSubBranch) url += `&sub_branch=${encodeURIComponent(finalSubBranch)}`;
 
                 try {
@@ -1438,7 +1461,7 @@
                     if (response.status === 403) {
                         showToast("تنبيه الحماية: غير مسموح لك بالإضافة لفرع خارج نطاق صلاحيتك!", "error", "وصول مرفوض");
                     } else if (response.ok) {
-                        showToast("تم إرسال العضو لقائمة التدقيق بنجاح.", "success", "تم الإرسال");
+                        showToast("تم إرسال العضو لقائمة التدقيق بنجاح وسيظهر فوراً تحت أبيه بعد الاعتماد.", "success", "تم الإرسال");
                         document.getElementById("addMemberForm").reset();
                         handleMainBranchChange();
                         fetchPendingMembers();
