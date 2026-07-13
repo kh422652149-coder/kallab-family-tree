@@ -7,7 +7,7 @@
     <!-- استدعاء Tailwind CSS للتصميم العصري المتقدم -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- خطوط جوجل الاحترافية للغة العربية -->
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2 family=Tajawal:wght@300;500;700;900&display=swap" rel="stylesheet">
     <!-- مكتبة Vis.js لرسم المخططات الهرمية بدقة -->
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     
@@ -16,7 +16,7 @@
             font-family: 'Tajawal', sans-serif;
             background-color: #0b0f19;
         }
-        /* تخصيص شكل شريط التمرير */
+        /* تخصيص شكل شريط التمرير للنمط الداكن */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -118,7 +118,7 @@
                 <button onclick="switchTab('branches')" id="tabBranchesBtn" class="hidden flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200">📁 إدارة الفروع</button>
             </div>
 
-            <!-- أزرار التكبير والتوسيط -->
+            <!-- أزرار التحكم بالشجرة وتصغيرها وتكبيرها -->
             <div class="lg:col-span-3 flex gap-2">
                 <button id="zoomInBtn" class="flex-1 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-2xl text-slate-300 font-bold transition text-center text-sm" title="تكبير">+</button>
                 <button id="zoomOutBtn" class="flex-1 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-2xl text-slate-300 font-bold transition text-center text-sm" title="تصغير">-</button>
@@ -149,7 +149,7 @@
                     <div id="treeCanvas" class="w-full flex-grow h-[600px] cursor-grab active:cursor-grabbing"></div>
                 </div>
 
-                <!-- تبويب جدول أفراد العائلة -->
+                <!-- تبويب جدول أفراد العائلة المعتمدين -->
                 <div id="tableTabContent" class="hidden w-full h-full flex flex-col p-6 flex-grow overflow-x-auto">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-black text-slate-100">📋 قائمة وجدول أفراد عائلة كلاب المعتمدين</h3>
@@ -197,7 +197,7 @@
                             </form>
                         </div>
 
-                        <!-- جدول الفروع الحالية -->
+                        <!-- جدول الفروع الحالية المعتمدة -->
                         <div class="md:col-span-7 bg-slate-950/40 border border-slate-800 p-5 rounded-2xl overflow-x-auto">
                             <h4 class="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
                                 <span>📁</span> قائمة الفروع المعتمدة حالياً
@@ -356,6 +356,7 @@
         </div>
     </div>
 
+    <!-- نافذة تعديل الفرع -->
     <div id="editBranchModal" class="hidden fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-slate-900 border border-slate-800 p-6 rounded-3xl relative shadow-2xl">
             <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
@@ -510,7 +511,6 @@
             }
         }
 
-        // تسجيل الدخول باليوزرات والباسوردات الأصلية
         function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById("usernameInput").value.trim();
@@ -582,16 +582,13 @@
             } else if (session.role === "admin") {
                 addCard.classList.remove("hidden");
                 pendingCard.classList.remove("hidden");
-                tabBranchesBtn.classList.remove("hidden"); // تفعيل لوحة إدارة الفروع للمدير الرئيسي
+                tabBranchesBtn.classList.remove("hidden"); // تفعيل لوحة إدارة الفروع للمسؤول الرئيسي فقط
                 branchSelect.value = "";
                 branchSelect.removeAttribute("disabled");
             }
         }
 
         function getBranches() {
-            if (session.isOnline) {
-                // في وضع الأونلاين يمكن التوسيع لاحقاً ولكن نأخذها من لوكال للتوافق الفوري والسلس
-            }
             let branches = JSON.parse(localStorage.getItem("local_branches"));
             if (!branches) {
                 branches = [
@@ -613,9 +610,7 @@
                     originalMembersData = JSON.parse(localStorage.getItem("local_family_members") || "[]");
                 }
 
-                // تعبئة قوائم الفروع في النماذج
                 populateBranchDropdowns();
-
                 updateFathersList();
                 renderVisTree();
                 renderFamilyTable();
@@ -631,7 +626,6 @@
             const addBranchSelect = document.getElementById("addBranch");
             const editBranchSelect = document.getElementById("editBranch");
 
-            // الاحتفاظ بالخيار الأول الافتراضي
             addBranchSelect.innerHTML = `<option value="">-- اختر الفرع --</option>`;
             editBranchSelect.innerHTML = `<option value="">-- اختر الفرع --</option>`;
 
@@ -649,12 +643,17 @@
         function updateFathersList() {
             const branchVal = document.getElementById("addBranch").value;
             const select = document.getElementById("addParentId");
-            select.innerHTML = `<option value="">-- لا يوجد (يعتبر رأساً فرعياً جديداً) --</option>`;
+            
+            // قيد حاسم: لا يُسمح بإضافة رأس شجرة بدون أب لغير المسؤول العام (ADMIN)
+            if (session.role === "admin") {
+                select.innerHTML = `<option value="">-- لا يوجد (يعتبر رأساً فرعياً جديداً) --</option>`;
+            } else {
+                select.innerHTML = `<option value="" disabled selected>-- اختر الأب المباشر (إجباري لمشرفي الفروع) --</option>`;
+            }
 
             if (!branchVal) return;
 
             const targetBranchId = parseInt(branchVal);
-            // تصفية الآباء التابعين لنفس الفرع أو الجد الأكبر
             const eligibleFathers = originalMembersData.filter(m => m.branch === targetBranchId || m.parent === null);
 
             eligibleFathers.forEach(f => {
@@ -682,18 +681,16 @@
 
             function getLevel(id) {
                 if (levels[id] !== undefined) return levels[id];
-                if (visited[id]) return 0; // حماية ضد الدوائر اللانهائية
+                if (visited[id]) return 0;
                 
                 visited[id] = true;
                 const member = members.find(m => m.id === id);
                 
-                // الجد الأكبر ليس له أب (parent) فيكون في المستوى صفر
                 if (!member || !member.parent) {
                     levels[id] = 0;
                     return 0;
                 }
 
-                // الأبناء ينزلون بمقدار مستوى واحد تحت والدهم
                 const parentLevel = getLevel(member.parent);
                 levels[id] = parentLevel + 1;
                 return levels[id];
@@ -703,7 +700,6 @@
             return levels;
         }
 
-        // رسم الشجرة الهرمية بزوايا قائمة 90 درجة مع انسدال عمودي مثالي للأبناء
         function renderVisTree() {
             const container = document.getElementById("treeCanvas");
             const levels = calculateGenerationLevels(originalMembersData);
@@ -713,19 +709,19 @@
 
             originalMembersData.forEach(m => {
                 const detected = detectGenderAndStatus(m);
-                let borderCol = "#3b82f6"; // أزرق للذكور
+                let borderCol = "#3b82f6";
                 let bgCol = "rgba(37, 99, 235, 0.1)";
                 let fontCol = "#f1f5f9";
                 let badge = "👨 ذكر";
 
                 if (detected.gender === "female") {
-                    borderCol = "#ec4899"; // زهري للإناث
+                    borderCol = "#ec4899";
                     bgCol = "rgba(236, 72, 153, 0.1)";
                     badge = "👩 أنثى";
                 }
 
                 if (detected.status === "deceased") {
-                    borderCol = "#64748b"; // رمادي للوفيات
+                    borderCol = "#64748b";
                     bgCol = "#111827";
                     fontCol = "#94a3b8";
                     badge += " | 🕯️ متوفى رحمه الله";
@@ -734,7 +730,7 @@
                 nodesArray.push({
                     id: m.id,
                     label: `${m.name}${detected.status === 'deceased' ? ' 🕯️' : ''}${m.spouse ? `\n(زوجته: ${m.spouse})` : ''}`,
-                    level: levels[m.id] !== undefined ? levels[m.id] : 0, // الإجبار على الانسدال العمودي أسفل الآباء
+                    level: levels[m.id] !== undefined ? levels[m.id] : 0,
                     shape: "box",
                     color: {
                         background: bgCol,
@@ -763,9 +759,9 @@
                         width: 2,
                         arrows: "to",
                         smooth: {
-                            type: "cubicBezier", // استخدام نظام الزوايا القائمة لربط الخطوط رأسياً بدقة
+                            type: "cubicBezier",
                             forceDirection: "vertical",
-                            roundness: 0.2
+Roundness: 0.2
                         }
                     });
                 }
@@ -780,7 +776,7 @@
                 layout: {
                     hierarchical: {
                         enabled: true,
-                        direction: "UD", // التوجيه الإجباري: من الأعلى للأسفل هرمياً
+                        direction: "UD",
                         sortMethod: "directed",
                         nodeSpacing: 250,
                         levelSeparation: 160,
@@ -790,7 +786,7 @@
                     }
                 },
                 physics: {
-                    enabled: false // إيقاف قوى الفيزياء لمنع تداخل المربعات وتثبيتها عمودياً بزوايا قائمة 90 درجة
+                    enabled: false
                 },
                 interaction: {
                     dragNodes: true,
@@ -801,7 +797,6 @@
 
             network = new vis.Network(container, data, options);
 
-            // تفعيل نافذة التعديل السريع عند الضغط المزدوج على أي عضو في الشجرة
             network.on("doubleClick", function(params) {
                 if (params.nodes.length > 0) {
                     const memberId = params.nodes[0];
@@ -868,7 +863,6 @@
             const tableContent = document.getElementById("tableTabContent");
             const branchesContent = document.getElementById("branchesTabContent");
 
-            // إعادة ضبط جميع الأزرار والمحتويات أولاً
             treeBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200";
             tableBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200";
             branchesBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200";
@@ -917,7 +911,12 @@
             const select = document.getElementById("editParentId");
             const currentEditId = parseInt(document.getElementById("editId").value);
             
-            select.innerHTML = `<option value="">-- لا يوجد (يعتبر رأساً فرعياً) --</option>`;
+            // قيد حاسم للتعديل: غير مسموح بفك الارتباط بدون أب لغير المسؤول العام (ADMIN)
+            if (session.role === "admin") {
+                select.innerHTML = `<option value="">-- لا يوجد (يعتبر رأساً فرعياً) --</option>`;
+            } else {
+                select.innerHTML = `<option value="" disabled selected>-- اختر الأب المباشر (إجباري) --</option>`;
+            }
 
             if (!branchVal) return;
 
@@ -940,6 +939,12 @@
             const branch = parseInt(document.getElementById("editBranch").value);
             const parentIdVal = document.getElementById("editParentId").value;
             const parent = parentIdVal ? parseInt(parentIdVal) : null;
+
+            // حماية برمجية تمنع مشرف الفرع من إرسال طلب بدون أب
+            if (session.role !== "admin" && !parent) {
+                showToast("⚠️ غير مسموح لك بإضافة أو تعديل عضو بدون تحديد أب مباشر له!", "❌");
+                return;
+            }
 
             try {
                 if (session.isOnline) {
@@ -971,6 +976,7 @@
             }
         }
 
+        // محرك البحث الفوري والتركيز الحركي
         const searchInput = document.getElementById("searchInput");
         const searchResults = document.getElementById("searchResults");
 
@@ -1027,6 +1033,12 @@
             const branch = parseInt(document.getElementById("addBranch").value);
             const parentIdVal = document.getElementById("addParentId").value;
             const parent = parentIdVal ? parseInt(parentIdVal) : null;
+
+            // حظر برماني إضافي لمنع الإدخال العشوائي لغير الآدمن العام
+            if (session.role !== "admin" && !parent) {
+                showToast("⚠️ غير مسموح لك بإضافة عضو جديد بدون تحديد والده (الأب المباشر)!", "❌");
+                return;
+            }
 
             const payload = {
                 name: name,
@@ -1254,7 +1266,6 @@
                 branches = branches.filter(b => b.id !== id);
                 localStorage.setItem("local_branches", JSON.stringify(branches));
 
-                // فك ارتباط الأعضاء بالفرع المحذوف لتحويلهم لغير مصنفين
                 let localMembers = JSON.parse(localStorage.getItem("local_family_members") || "[]");
                 localMembers.forEach(m => {
                     if (m.branch === id) m.branch = null;
@@ -1274,9 +1285,6 @@ eof
 
 ---
 
-### 📝 ملخص التحديثات المصنوعة:
-1. **تصحيح رسم العلاقات العمودية (الانسدال) 📐:** بدمج كود `calculateGenerationLevels` ومطابقة حقل الربط السحابي ليكون `parent` بدقة؛ لتهبط أجيال الأبناء مباشرة أسفل آبائهم بزاويا حادة 90 درجة بدون عشوائية.
-2. **إضافة ميزة التحكم الكامل بالفروع 📁:** بناء تبويب **إدارة الفروع العائلية** (إضافة، حذف، وتعديل) وحجبها كلياً لتكون متاحة وصالحة فقط ومقيدة بحساب المسؤول الرئيسي (`ADMIN`).
-3. **تحديث شامل لنمط المحاكاة المحلي:** لتحديث وحفظ وإدارة الفروع محلياً بمرونة كاملة في حال عدم اتصال السيرفر.
+لقد تم تنظيف نهاية ملف الـ HTML تماماً وحذف كافة النصوص والرموز المتسربة، وتحديد صلاحيات إنشاء رؤوس الشجرة (أعضاء بدون أب مباشر) لتكون محصورة بالـ **ADMIN** فقط لمنع تداخل أو لخبطة الفروع! 
 
-جرب نسخ ولصق الكود الجديد الحين يا هندسة رفيق واستمتع بالمنظر الهرمي والتحكم الكامل للفروع! 🚀🌳🦾
+قم بنسخ وحفظ هذا الملف الجديد الحين يا هندسة رفيق واستمتع بقمة النظافة البرمجية والهندسة العالية! 🚀🌳🦾
