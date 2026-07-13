@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>بوابة شجرة العائلة الرقمية - عائلة كلاب</title>
     
-    <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -94,7 +93,7 @@
 </head>
 <body class="p-4 md:p-6 min-h-screen">
 
-    <!-- Mandatory Login Portal (Covers the whole screen on load) -->
+    <!-- Mandatory Login Portal (Covers the whole screen on load, completely hides main app) -->
     <div id="mandatory-login-screen" class="fixed inset-0 bg-bgMain z-[9999] flex justify-center items-center p-4">
         <div class="bg-bgCard border border-borderColor p-8 rounded-3xl w-full max-w-md shadow-2xl space-y-6 text-center">
             <div class="bg-primary/10 text-primary w-20 h-20 rounded-2xl mx-auto flex justify-center items-center text-4xl shadow-lg">
@@ -119,6 +118,29 @@
             <button onclick="handleLogin()" class="w-full bg-primary hover:bg-primaryHover text-white text-sm font-bold py-3.5 rounded-xl transition duration-200 shadow-md shadow-primary/20">
                 🔓 دخول آمن للبوابة العائلية
             </button>
+        </div>
+    </div>
+
+    <!-- Loading and Render Wakeup Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-bgMain/95 z-[9998] flex flex-col justify-center items-center p-4" style="display: none;">
+        <div class="bg-bgCard border border-borderColor p-8 rounded-3xl w-full max-w-md text-center space-y-6 shadow-2xl">
+            <div class="text-6xl animate-bounce">🌳</div>
+            <h3 id="loading-title" class="text-xl font-bold text-slate-100">جاري الاتصال بالسيرفر السحابي...</h3>
+            <p id="loading-desc" class="text-xs text-slate-400 leading-relaxed">
+                نقوم الآن بإيقاظ خادم عائلة كلاب السحابي على منصة Render.<br>
+                <span class="text-yellow-500 font-semibold">تنبيه: قد يستغرق التشغيل الأول حوالي 50 ثانية إذا كان السيرفر خاملاً. يرجى الانتظار وعدم إغلاق الصفحة.</span>
+            </p>
+            <div class="w-full bg-bgInput h-2.5 rounded-full overflow-hidden">
+                <div class="bg-primary h-full animate-pulse" style="width: 100%"></div>
+            </div>
+            <div class="flex flex-col gap-2 pt-2">
+                <button id="loading-retry-btn" onclick="loadAllData()" class="bg-primary hover:bg-primaryHover text-white text-xs font-bold py-2.5 rounded-xl transition duration-150 shadow-md hidden">
+                    🔄 إعادة محاولة الاتصال
+                </button>
+                <button onclick="handleLogout()" class="bg-bgInput hover:bg-slate-800 text-slate-300 text-xs font-bold py-2.5 rounded-xl border border-borderColor transition">
+                    🚪 تسجيل الخروج
+                </button>
+            </div>
         </div>
     </div>
 
@@ -277,9 +299,6 @@
                             <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#111827] border border-slate-500"></span> متوفى رحمه الله</span>
                         </div>
                         
-                        <div id="tree-loading" class="absolute inset-0 bg-bgMain/80 flex justify-center items-center z-20 transition-opacity duration-300">
-                            <p class="text-sm font-bold text-primary animate-pulse">🌳 جاري رسم الهيكل الشجري الرأسي لعائلة كلاب...</p>
-                        </div>
                         <div id="tree-canvas" class="w-full h-[650px]"></div>
                     </div>
                 </section>
@@ -393,7 +412,7 @@
         // API Base Endpoint (SaaS Back-end on Render)
         const API_URL = "https://kallab-backend.onrender.com";
 
-        // Global State Variables (No simulation mock fallbacks)
+        // Global State Variables
         let networkInstance = null;
         let allFamilyMembers = [];
         
@@ -418,7 +437,6 @@
             "100": { pass: "100", role: "viewer", name: "مشاهد عام (زائر)", branch: null }
         };
 
-        // Custom Notification and Dialog Systems (Verbatim alternative to alerts)
         function showCustomAlert(msg) {
             document.getElementById('custom-alert-text').textContent = msg;
             document.getElementById('custom-alert-modal').style.display = 'flex';
@@ -445,14 +463,16 @@
             closeCustomConfirm();
         };
 
-        // App Initialization
         window.addEventListener('DOMContentLoaded', () => {
             // Force modals to hide on init
             document.getElementById('edit-member-modal').style.display = 'none';
             document.getElementById('custom-alert-modal').style.display = 'none';
             document.getElementById('custom-confirm-modal').style.display = 'none';
 
-            // Check if user session already exists in localStorage
+            checkSession();
+        });
+
+        function checkSession() {
             const savedSession = localStorage.getItem("kallab_session_user");
             if (savedSession && ACCOUNTS[savedSession]) {
                 const account = ACCOUNTS[savedSession];
@@ -465,37 +485,34 @@
                 document.getElementById('main-application-wrapper').classList.remove('hidden');
                 
                 applyUserView(account.name);
-                checkSaaSConnection();
                 loadAllData();
             } else {
                 // Show only Login screen
                 document.getElementById('mandatory-login-screen').style.display = 'flex';
                 document.getElementById('main-application-wrapper').classList.add('hidden');
+                document.getElementById('loading-overlay').style.display = 'none';
             }
-        });
+        }
 
-        // Check Connection to FastAPI backend
         async function checkSaaSConnection() {
             const statusBadge = document.getElementById('connection-status');
             try {
-                const response = await fetch(`${API_URL}/`, { method: 'GET' });
+                // Fetch family tree directly as a health check to avoid 404 on "/"
+                const response = await fetch(`${API_URL}/family-tree/`, { method: 'GET' });
                 if (response.ok) {
-                    statusBadge.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
-                    statusBadge.style.color = "#10B981";
-                    statusBadge.style.borderColor = "#10B981";
+                    statusBadge.className = "text-xs font-semibold px-4 py-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-500 shadow-md";
                     statusBadge.textContent = "🟢 متصل بخادم Python السحابي (Render)";
+                    return true;
                 } else {
                     throw new Error();
                 }
             } catch (err) {
-                statusBadge.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
-                statusBadge.style.color = "#EF4444";
-                statusBadge.style.borderColor = "#EF4444";
+                statusBadge.className = "text-xs font-semibold px-4 py-2 rounded-full border border-rose-500/50 bg-rose-500/10 text-rose-500 shadow-md";
                 statusBadge.textContent = "🔴 فشل الاتصال بخادم البايثون";
+                return false;
             }
         }
 
-        // Direct Authentication validation routine
         function handleLogin() {
             const userIn = document.getElementById('login-username').value.trim().toUpperCase();
             const passIn = document.getElementById('login-password').value.trim();
@@ -514,7 +531,6 @@
                 document.getElementById('main-application-wrapper').classList.remove('hidden');
 
                 applyUserView(account.name);
-                checkSaaSConnection();
                 loadAllData();
             } else {
                 showCustomAlert("❌ خطأ في اسم المستخدم أو كلمة المرور الشخصية!");
@@ -531,12 +547,12 @@
             document.getElementById('login-username').value = '';
             document.getElementById('login-password').value = '';
 
-            // Hide Main App & Show login portal
+            // Hide Main App, loading overlay & Show login portal
             document.getElementById('main-application-wrapper').classList.add('hidden');
+            document.getElementById('loading-overlay').style.display = 'none';
             document.getElementById('mandatory-login-screen').style.display = 'flex';
         }
 
-        // Apply visual states according to role permissions
         function applyUserView(roleName) {
             document.getElementById('role-badge').textContent = `👑 ${roleName}`;
             
@@ -567,16 +583,30 @@
             }
         }
 
-        // Load all data from API
         async function loadAllData() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingTitle = document.getElementById('loading-title');
+            const loadingDesc = document.getElementById('loading-desc');
+            const retryBtn = document.getElementById('loading-retry-btn');
+
+            loadingOverlay.style.display = 'flex';
+            loadingTitle.textContent = "جاري الاتصال بالسيرفر السحابي...";
+            loadingDesc.innerHTML = `نقوم الآن بإيقاظ خادم عائلة كلاب السحابي على منصة Render.<br>
+            <span class="text-yellow-500 font-semibold">تنبيه: قد يستغرق التشغيل الأول حوالي 50 ثانية إذا كان السيرفر خاملاً. يرجى الانتظار وعدم إغلاق الصفحة.</span>`;
+            retryBtn.classList.add('hidden');
+
             try {
+                const isConnected = await checkSaaSConnection();
+                if (!isConnected) {
+                    throw new Error("SaaS Offline");
+                }
+
                 // Fetch approved family-tree
                 const resMembers = await fetch(`${API_URL}/family-tree/`);
-                if (resMembers.ok) {
-                    allFamilyMembers = await resMembers.json();
-                } else {
+                if (!resMembers.ok) {
                     throw new Error("Failed to fetch family tree");
                 }
+                allFamilyMembers = await resMembers.json();
 
                 // If auditor/admin, load pending approvals
                 if (currentUserRole === 'auditor' || currentUserRole === 'admin') {
@@ -588,16 +618,17 @@
                 renderMembersTable();
                 updateGeneralStats();
 
-                document.getElementById('tree-loading').style.opacity = '0';
-                setTimeout(() => document.getElementById('tree-loading').style.display = 'none', 300);
+                // Success, hide the loader entirely
+                loadingOverlay.style.display = 'none';
             } catch (err) {
                 console.error("API error: ", err);
-                showCustomAlert("⚠️ فشل جلب البيانات من الخادم السحابي. يرجى التأكد من أن السيرفر يعمل حالياً.");
-                document.getElementById('tree-loading').style.display = 'none';
+                loadingTitle.textContent = "❌ فشل الاتصال بالسيرفر السحابي";
+                loadingDesc.innerHTML = `لم نتمكن من جلب بيانات الشجرة حالياً.<br>
+                <span class="text-rose-400 font-semibold">يرجى الانتظار حتى يستيقظ السيرفر بالكامل من الخمول ثم اضغط على زر 'إعادة محاولة الاتصال' بالأسفل.</span>`;
+                retryBtn.classList.remove('hidden');
             }
         }
 
-        // Father Selector generator with strict restriction for "Head of Tree" adding
         function populateFatherSelector() {
             const fatherSelect = document.getElementById('new-father-selector');
             fatherSelect.innerHTML = '';
@@ -606,7 +637,7 @@
             if (currentUserRole === 'admin') {
                 fatherSelect.innerHTML += '<option value="">-- لا يوجد (يعتبر رأساً فرعياً جديداً) --</option>';
             } else {
-                fatherSelect.innerHTML += '<option value="" disabled selected>-- اختر الأب المباشر (إلزامي لغير المسؤول) --</option>';
+                fatherSelect.innerHTML += '<option value="" disabled selected>-- اختر الأب المباشر (إلزامي) --</option>';
             }
 
             const selectedBranchId = parseInt(document.getElementById('new-branch-selector').value);
@@ -627,7 +658,7 @@
             if (currentUserRole === 'admin') {
                 fatherSelect.innerHTML += '<option value="">-- لا يوجد (رأس فرع جديد) --</option>';
             } else {
-                fatherSelect.innerHTML += '<option value="" disabled>-- اختر الأب المباشر (إلزامي لغير المسؤول) --</option>';
+                fatherSelect.innerHTML += '<option value="" disabled>-- اختر الأب المباشر (إلزامي) --</option>';
             }
 
             const selectedBranchId = parseInt(document.getElementById('edit-branch').value);
@@ -640,7 +671,6 @@
             });
         }
 
-        // Dynamic Recursive Generation calculation to lock the tree vertically
         function calculateGenerationLevels(members) {
             let memberMap = {};
             members.forEach(m => {
@@ -655,8 +685,8 @@
                 }
             });
 
-            // Roots are those with no parent
-            let roots = members.filter(m => !m.parent);
+            // Roots are those with no parent or whose parent is not in our data
+            let roots = members.filter(m => !m.parent || !memberMap[m.parent]);
 
             function assignLevel(nodeId, currentLevel) {
                 if (memberMap[nodeId]) {
@@ -674,7 +704,6 @@
             return Object.values(memberMap);
         }
 
-        // Render the family tree hierarchically (Orthogonal/Right Angle layout)
         function renderHierarchicalTree() {
             const container = document.getElementById('tree-canvas');
             
@@ -768,7 +797,6 @@
             });
         }
 
-        // Search functionality
         function handleSearch(term) {
             const resultBox = document.getElementById('search-results-box');
             if (!term.trim()) {
@@ -813,7 +841,6 @@
             }
         }
 
-        // Render table records
         function renderMembersTable() {
             const body = document.getElementById('members-table-body');
             body.innerHTML = '';
@@ -842,7 +869,6 @@
             });
         }
 
-        // Edit Member Logic
         function openEditModal(id) {
             const member = allFamilyMembers.find(m => m.id === id);
             if (!member) return;
@@ -878,7 +904,6 @@
             document.getElementById('edit-member-modal').style.display = 'none';
         }
 
-        // Submit Edit directly to FastAPI
         async function submitEditMember(event) {
             event.preventDefault();
             const id = parseInt(document.getElementById('edit-id').value);
@@ -896,7 +921,6 @@
             }
 
             try {
-                // Fetch using correct parameters aligned with FastAPI python main.py
                 const url = `${API_URL}/edit-member/${id}?first_name=${encodeURIComponent(name)}&spouse_name=&parent_id=${parentId || ''}&branch_id=${branchId || ''}&user_role=${currentUserRole}`;
                 const response = await fetch(url, { method: 'PUT' });
 
@@ -913,7 +937,6 @@
             }
         }
 
-        // Add Member directly to FastAPI
         async function submitNewMember(event) {
             event.preventDefault();
             const name = document.getElementById('new-name').value.trim();
@@ -946,7 +969,6 @@
             }
         }
 
-        // Load Pending Approvals
         async function loadPendingApprovals() {
             const listDiv = document.getElementById('pending-list');
             const pendingCountBadge = document.getElementById('pending-count');
@@ -996,7 +1018,6 @@
             }
         }
 
-        // Delete Member
         async function deleteMember(id) {
             showCustomConfirm("⚠️ هل أنت متأكد من حذف/رفض هذا السجل نهائياً من الشجرة وقاعدة البيانات السحابية؟", async () => {
                 try {
