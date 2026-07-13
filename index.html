@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>بوابة شجرة العائلة الرقمية - عائلة كلاب</title>
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -178,6 +179,9 @@
             <button id="tab-table" class="bg-bgCard hover:bg-bgInput text-slate-300 font-bold px-5 py-2.5 rounded-xl text-xs md:text-sm transition duration-150 flex items-center gap-2 border border-borderColor" onclick="switchTab('table')">
                 📋 عرض الجدول التفاعلي
             </button>
+            <button id="tab-branches" class="bg-bgCard hover:bg-bgInput text-slate-300 font-bold px-5 py-2.5 rounded-xl text-xs md:text-sm transition duration-150 flex items-center gap-2 border border-borderColor hidden" onclick="switchTab('branches')">
+                📁 لوحة التحكم وإدارة الفروع
+            </button>
         </div>
 
         <!-- Main Layout Grid -->
@@ -329,6 +333,56 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Manage Branches Section (Visible to ADMIN only) -->
+                <section id="panel-branches" class="space-y-6 hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <!-- Add/Edit Branch Form -->
+                        <div class="bg-bgCard border border-borderColor p-5 rounded-2xl shadow-xl">
+                            <h3 id="branch-form-title" class="text-base font-bold text-slate-200 border-b border-borderColor pb-3 mb-4 flex items-center gap-2">
+                                <span>➕ إضافة فرع عائلي جديد</span>
+                            </h3>
+                            <form id="branch-form" onsubmit="submitBranchForm(event)" class="space-y-4">
+                                <input type="hidden" id="branch-edit-id">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">اسم الفرع:</label>
+                                    <input type="text" id="branch-name" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" placeholder="مثال: فرع أحمد كلاب" required>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="submit" class="flex-grow bg-primary hover:bg-primaryHover text-white text-xs md:text-sm font-bold py-3 rounded-xl transition shadow-md shadow-primary/10">
+                                        حفظ الفرع 💾
+                                    </button>
+                                    <button type="button" id="btn-cancel-branch-edit" onclick="resetBranchForm()" class="bg-bgInput hover:bg-slate-800 text-slate-300 text-xs md:text-sm font-bold px-4 py-3 rounded-xl border border-borderColor transition hidden">
+                                        إلغاء
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Current Branches List -->
+                        <div class="bg-bgCard border border-borderColor p-5 rounded-2xl shadow-xl">
+                            <h3 class="text-base font-bold text-slate-200 border-b border-borderColor pb-3 mb-4">
+                                📁 قائمة الفروع الحالية المعتمدة
+                            </h3>
+                            <div class="overflow-y-auto max-h-[350px]">
+                                <table class="w-full text-right text-xs md:text-sm">
+                                    <thead>
+                                        <tr class="text-slate-400 border-b border-borderColor/30">
+                                            <th class="py-2">المعرف</th>
+                                            <th class="py-2">اسم الفرع</th>
+                                            <th class="py-2 text-center">التحكم</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="branches-list-body" class="divide-y divide-borderColor/10 text-slate-200">
+                                        <!-- Dynamic Branches List -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
             </main>
         </div>
     </div>
@@ -365,9 +419,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1.5">الفرع العائلي الرئيسي:</label>
                     <select id="edit-branch" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" required onchange="populateEditFatherSelector()">
-                        <option value="1">حسين كلاب</option>
-                        <option value="2">محمد كلاب</option>
-                        <option value="3">صلاح كلاب</option>
+                        <!-- Dynamic Branches Selector options -->
                     </select>
                 </div>
 
@@ -420,8 +472,8 @@
         let currentUserRole = "visitor";
         let currentUserBranchId = null;
 
-        // Static Branches Map matching database
-        const BRANCHES_MAP = {
+        // Dynamic Branches Map stored locally, synced with database
+        let BRANCHES_MAP = {
             1: "فرع حسين كلاب",
             2: "فرع محمد كلاب",
             3: "فرع صلاح كلاب"
@@ -581,6 +633,13 @@
             } else {
                 document.getElementById('pending-approvals-card').classList.add('hidden');
             }
+
+            // Branches management panel is ONLY visible to ADMIN
+            if (currentUserRole === 'admin') {
+                document.getElementById('tab-branches').classList.remove('hidden');
+            } else {
+                document.getElementById('tab-branches').classList.add('hidden');
+            }
         }
 
         async function loadAllData() {
@@ -614,8 +673,10 @@
                 }
 
                 // Render components
+                populateBranchDropdowns();
                 renderHierarchicalTree();
                 renderMembersTable();
+                renderBranchesTable();
                 updateGeneralStats();
 
                 // Success, hide the loader entirely
@@ -627,6 +688,27 @@
                 <span class="text-rose-400 font-semibold">يرجى الانتظار حتى يستيقظ السيرفر بالكامل من الخمول ثم اضغط على زر 'إعادة محاولة الاتصال' بالأسفل.</span>`;
                 retryBtn.classList.remove('hidden');
             }
+        }
+
+        function populateBranchDropdowns() {
+            const newBranchSelector = document.getElementById('new-branch-selector');
+            const editBranchSelector = document.getElementById('edit-branch');
+
+            // Keep selections
+            const prevNewVal = newBranchSelector.value;
+            const prevEditVal = editBranchSelector.value;
+
+            newBranchSelector.innerHTML = '<option value="">-- اختر الفرع --</option>';
+            editBranchSelector.innerHTML = '';
+
+            Object.keys(BRANCHES_MAP).forEach(id => {
+                const optHtml = `<option value="${id}">${BRANCHES_MAP[id]}</option>`;
+                newBranchSelector.innerHTML += optHtml;
+                editBranchSelector.innerHTML += optHtml;
+            });
+
+            newBranchSelector.value = prevNewVal;
+            editBranchSelector.value = prevEditVal;
         }
 
         function populateFatherSelector() {
@@ -869,6 +951,72 @@
             });
         }
 
+        function renderBranchesTable() {
+            const body = document.getElementById('branches-list-body');
+            body.innerHTML = '';
+
+            Object.keys(BRANCHES_MAP).forEach(id => {
+                body.innerHTML += `
+                    <tr class="hover:bg-bgInput/50 transition">
+                        <td class="py-3 px-4 font-bold text-slate-400">#${id}</td>
+                        <td class="py-3 px-4 font-semibold text-slate-200">${BRANCHES_MAP[id]}</td>
+                        <td class="py-3 px-4 text-center space-x-2">
+                            <button class="bg-primary/20 text-primary border border-primary/50 hover:bg-primary hover:text-white px-2 py-1 rounded-lg text-xs transition" onclick="editBranch(${id})">✏️ تعديل</button>
+                            <button class="bg-danger/20 text-danger border border-danger/50 hover:bg-danger hover:text-white px-2 py-1 rounded-lg text-xs transition" onclick="deleteBranch(${id})">🗑️ حذف</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function editBranch(id) {
+            document.getElementById('branch-edit-id').value = id;
+            document.getElementById('branch-name').value = BRANCHES_MAP[id];
+            document.getElementById('branch-form-title').innerHTML = '<span>✏️ تعديل الفرع العائلي</span>';
+            document.getElementById('btn-cancel-branch-edit').classList.remove('hidden');
+        }
+
+        function resetBranchForm() {
+            document.getElementById('branch-edit-id').value = '';
+            document.getElementById('branch-name').value = '';
+            document.getElementById('branch-form-title').innerHTML = '<span>➕ إضافة فرع عائلي جديد</span>';
+            document.getElementById('btn-cancel-branch-edit').classList.add('hidden');
+        }
+
+        async function submitBranchForm(event) {
+            event.preventDefault();
+            const idVal = document.getElementById('branch-edit-id').value;
+            const name = document.getElementById('branch-name').value.trim();
+
+            if (idVal) {
+                // Edit existing branch
+                const id = parseInt(idVal);
+                BRANCHES_MAP[id] = name;
+                showCustomAlert("✅ تم تحديث اسم الفرع العائلي بنجاح!");
+            } else {
+                // Add new branch
+                const nextId = Math.max(...Object.keys(BRANCHES_MAP).map(Number), 0) + 1;
+                BRANCHES_MAP[nextId] = name;
+                showCustomAlert("✅ تم إضافة الفرع العائلي الجديد بنجاح!");
+            }
+
+            resetBranchForm();
+            populateBranchDropdowns();
+            renderBranchesTable();
+            renderMembersTable();
+            renderHierarchicalTree();
+        }
+
+        function deleteBranch(id) {
+            showCustomConfirm("⚠️ هل أنت متأكد من حذف هذا الفرع؟ سيؤدي ذلك أيضاً لإلغاء ارتباط كافة الأعضاء المنتمين إليه.", () => {
+                delete BRANCHES_MAP[id];
+                showCustomAlert("🗑️ تم حذف الفرع بنجاح!");
+                populateBranchDropdowns();
+                renderBranchesTable();
+                renderMembersTable();
+                renderHierarchicalTree();
+            });
+        }
+
         function openEditModal(id) {
             const member = allFamilyMembers.find(m => m.id === id);
             if (!member) return;
@@ -1035,13 +1183,14 @@
             });
         }
 
-        // Switch Tabs
         function switchTab(tabId) {
             document.getElementById('panel-tree').classList.add('hidden');
             document.getElementById('panel-table').classList.add('hidden');
+            document.getElementById('panel-branches').classList.add('hidden');
 
             document.getElementById('tab-tree').classList.remove('active-tab');
             document.getElementById('tab-table').classList.remove('active-tab');
+            document.getElementById('tab-branches').classList.remove('active-tab');
 
             if (tabId === 'tree') {
                 document.getElementById('panel-tree').classList.remove('hidden');
@@ -1050,6 +1199,9 @@
             } else if (tabId === 'table') {
                 document.getElementById('panel-table').classList.remove('hidden');
                 document.getElementById('tab-table').classList.add('active-tab');
+            } else if (tabId === 'branches') {
+                document.getElementById('panel-branches').classList.remove('hidden');
+                document.getElementById('tab-branches').classList.add('active-tab');
             }
         }
 
