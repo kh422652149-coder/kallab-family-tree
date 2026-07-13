@@ -63,11 +63,11 @@
 
         /* Modal custom configuration */
         .modal {
-            display: none;
             position: fixed;
             inset: 0;
             background-color: rgba(11, 15, 25, 0.9);
             z-index: 1000;
+            display: flex;
             justify-content: center;
             align-items: center;
             padding: 1rem;
@@ -187,6 +187,7 @@
         <!-- Main Layout Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
+            <!-- Sidebar containing form -->
             <aside class="lg:col-span-4 xl:col-span-3 flex flex-col gap-6">
                 
                 <!-- Add Member Panel (Visible to Logged in branch/global admins) -->
@@ -194,10 +195,11 @@
                     <h3 class="text-base font-bold mb-4 flex items-center gap-2 text-primary border-b border-borderColor pb-3">
                         <span>➕ إضافة عضو جديد للشجرة</span>
                     </h3>
+                    <!-- FORM: Removed "required" from selectors to allow JS-based flexible validation -->
                     <form id="add-member-form" onsubmit="submitNewMember(event)" class="space-y-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1.5">اسم العضو الجديد بالكامل:</label>
-                            <input type="text" id="new-name" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" placeholder="مثال: أحمد مصطفى كلاب" required>
+                            <input type="text" id="new-name" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" placeholder="مثال: صالح محمد يوسف محمد كلاب" required>
                         </div>
                         
                         <div class="grid grid-cols-2 gap-3">
@@ -219,22 +221,19 @@
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1.5">الفرع الرئيسي التابع له:</label>
-                            <select id="new-branch-selector" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" required onchange="populateFatherSelector()">
-                                <option value="">-- اختر الفرع --</option>
-                                <option value="1">حسين كلاب</option>
-                                <option value="2">محمد كلاب</option>
-                                <option value="3">صلاح كلاب</option>
+                            <select id="new-branch-selector" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" onchange="populateFatherSelector()">
+                                <!-- Loaded dynamically -->
                             </select>
                         </div>
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1.5 font-bold text-yellow-500">يرتبط بـ (الأب المباشر):</label>
-                            <select id="new-father-selector" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" required>
+                            <select id="new-father-selector" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition">
                                 <!-- Dynamic Parents List loaded directly from live db -->
                             </select>
                         </div>
 
-                        <button type="submit" class="w-full bg-primary hover:bg-primaryHover text-white text-xs md:text-sm font-bold py-3 rounded-xl transition shadow-md shadow-primary/10 mt-2">
+                        <button type="submit" class="w-full bg-primary hover:bg-primaryHover text-white text-xs md:text-sm font-bold py-3 rounded-xl transition duration-150 shadow-md shadow-primary/10 mt-2">
                             إرسال الطلب للاعتماد 🚀
                         </button>
                     </form>
@@ -277,6 +276,7 @@
                 </div>
             </aside>
 
+            <!-- Main Layout Space -->
             <main class="lg:col-span-8 xl:col-span-9 space-y-6">
                 
                 <!-- Tree Section -->
@@ -387,7 +387,7 @@
         </div>
     </div>
 
-    <!-- Edit Member Modal (Strictly hidden on load) -->
+    <!-- Edit Member Modal (Strictly hidden on load using direct display inline style) -->
     <div id="edit-member-modal" class="modal" style="display: none;">
         <div class="modal-content max-w-md">
             <h3 class="text-base md:text-lg font-bold mb-4 text-primary border-b border-borderColor pb-3">✏️ تعديل بيانات العضو</h3>
@@ -418,7 +418,7 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1.5">الفرع العائلي الرئيسي:</label>
-                    <select id="edit-branch" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" required onchange="populateEditFatherSelector()">
+                    <select id="edit-branch" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" onchange="populateEditFatherSelector()">
                         <!-- Dynamic Branches Selector options -->
                     </select>
                 </div>
@@ -724,7 +724,7 @@
 
             const selectedBranchId = parseInt(document.getElementById('new-branch-selector').value);
             
-            // Filter qualified parents (males who are approved)
+            // Filter qualified parents (males who are approved) from the list
             const qualifiedFathers = allFamilyMembers.filter(m => m.gender === 'male' && (!selectedBranchId || m.branch === selectedBranchId));
             
             qualifiedFathers.forEach(f => {
@@ -753,13 +753,14 @@
             });
         }
 
+        // Math Recursive Generation Level Engine to force nodes to hang strictly 100% underneath their parents (90 degrees alignment)
         function calculateGenerationLevels(members) {
             let memberMap = {};
             members.forEach(m => {
                 memberMap[m.id] = { ...m, level: null, children: [] };
             });
 
-            // Map parents and children correctly
+            // Map parents and children correctly using strictly 'm.parent' returned by python api
             members.forEach(m => {
                 const parentKey = m.parent;
                 if (parentKey && memberMap[parentKey]) {
@@ -833,7 +834,7 @@
                     title: `العضو: ${m.name}\nالمعرّف: #${m.id}\n${infoText}`
                 });
 
-                // Parent link
+                // Parent link (strictly pointing from parent to child)
                 if (m.parent) {
                     edgesArray.push({
                         from: m.parent,
@@ -928,7 +929,7 @@
             body.innerHTML = '';
 
             allFamilyMembers.forEach(m => {
-                const branchName = BRANCHES_MAP[m.branch] || 'المركز الرئيسي';
+                const branchName = BRANCHES_MAP[m.branch] || 'المركز الرئيسي / الأساس';
 
                 let actionHtml = '';
                 if (currentUserRole === 'admin' || (currentUserRole === 'branch_admin' && m.branch === currentUserBranchId)) {
@@ -1088,16 +1089,25 @@
         async function submitNewMember(event) {
             event.preventDefault();
             const name = document.getElementById('new-name').value.trim();
-            const branchId = parseInt(document.getElementById('new-branch-selector').value);
+            const branchVal = document.getElementById('new-branch-selector').value;
+            const branchId = branchVal ? parseInt(branchVal) : null;
             const gender = document.getElementById('new-gender').value;
             const status = document.getElementById('new-status').value;
             const parentVal = document.getElementById('new-father-selector').value;
             const parentId = parentVal ? parseInt(parentVal) : null;
 
-            // Restrict adding head of tree
-            if (!parentId && currentUserRole !== 'admin') {
-                showCustomAlert("⚠️ خطأ صلاحية: يجب اختيار الأب المباشر لإكمال الإضافة!");
-                return;
+            // FLEXIBLE SMART JS CHECK: 
+            // Only non-admins are strictly forced to select a branch and a direct father.
+            // ADMIN can submit with null branch and null father (Head of tree/Root node skips branch completely!).
+            if (currentUserRole !== 'admin') {
+                if (!branchId) {
+                    showCustomAlert("⚠️ خطأ: يرجى اختيار الفرع الرئيسي التابع له العضو الجديد!");
+                    return;
+                }
+                if (!parentId) {
+                    showCustomAlert("⚠️ خطأ صلاحية: يجب اختيار الأب المباشر لإرسال الطلب!");
+                    return;
+                }
             }
 
             try {
@@ -1150,7 +1160,6 @@
             }
         }
 
-        // Approve Member
         async function approveMember(id) {
             try {
                 const response = await fetch(`${API_URL}/verify-member/${id}?user_role=${currentUserRole}`, { method: 'PUT' });
