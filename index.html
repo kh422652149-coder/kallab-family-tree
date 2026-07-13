@@ -3,765 +3,570 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة شجرة العائلة الرقمية - عائلة كلاب</title>
-    <!-- استدعاء Tailwind CSS للتصميم العصري المتقدم -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- خطوط جوجل الاحترافية للغة العربية -->
-    <link href="https://fonts.googleapis.com/css2 family=Tajawal:wght@300;500;700;900&display=swap" rel="stylesheet">
-    <!-- مكتبة Vis.js لرسم المخططات الهرمية بدقة -->
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <title>بوابة شجرة العائلة الرقمية - عائلة كُلَّاب</title>
     
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
     <style>
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background-color: #0b0f19;
+        * {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
         }
-        /* تخصيص شكل شريط التمرير للنمط الداكن */
+        body {
+            background-color: #0B0F19;
+            color: #F8FAFC;
+        }
+        /* مظهر مخصص لمجرى التمرير السلس */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #0b0f19;
+            background: #151D30;
         }
         ::-webkit-scrollbar-thumb {
-            background: #1e293b;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #334155;
+            background: #10B981;
+            border-radius: 4px;
         }
     </style>
 </head>
-<body class="text-slate-100 min-h-screen flex flex-col relative overflow-x-hidden">
+<body class="p-4 md:p-6 min-height-screen">
 
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 px-4 py-4 sm:px-8">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-                <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-lg sm:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">بوابة شجرة العائلة الرقمية - عائلة كلاب</h1>
-                    <p class="text-xs text-slate-400 mt-0.5">نظام تتبع الفروع الجغرافية لنسب عائلة كلاب الكرام تحت إشراف المسؤول العام والمدقق</p>
-                </div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-3 justify-end w-full md:w-auto">
-                <div id="connectionStatus" class="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    جاري الاتصال بالسحابة...
-                </div>
-
-                <div id="userInfo" class="hidden px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs flex items-center gap-2">
-                    <span class="text-slate-400">المستخدم:</span>
-                    <span id="currentUsername" class="font-bold text-emerald-400">ADMIN</span>
-                    <span id="currentUserRole" class="px-2 py-0.5 bg-slate-900 rounded text-[10px] text-slate-400"></span>
-                </div>
-
-                <button id="logoutBtn" onclick="handleLogout()" class="hidden px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-bold transition duration-300">
-                    تسجيل الخروج 🚪
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main id="authSection" class="flex-grow flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-slate-900/50 border border-slate-800 p-6 sm:p-8 rounded-3xl backdrop-blur-lg shadow-2xl relative">
-            <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
-            <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
-
-            <div class="text-center mb-8">
-                <span class="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-full mb-3 border border-emerald-500/20">بوابة الدخول المباشرة</span>
-                <h2 class="text-xl sm:text-2xl font-black text-slate-100">سجل دخولك الآن</h2>
-                <p class="text-xs text-slate-400 mt-2">يرجى إدخال الحساب المعتمَّد لتفعيل الصلاحيات المناسبة بالشجرة</p>
-            </div>
-
-            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">اسم المستخدم (Username)</label>
-                    <input type="text" id="usernameInput" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-200 text-left" placeholder="Username" dir="ltr">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">كلمة المرور (Password)</label>
-                    <input type="password" id="passwordInput" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-200 text-left" placeholder="••••••••" dir="ltr">
-                </div>
-                <button type="submit" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-bold rounded-2xl shadow-xl transition duration-300">
-                    تسجيل الدخول الآمن 🔓
-                </button>
-            </form>
-
-            <div class="mt-6 text-center">
-                <span class="text-[11px] text-slate-500">نظام حماية وإدارة عائلة كلاب الرقمي © 2026</span>
-            </div>
-        </div>
-    </main>
-
-    <main id="appSection" class="hidden flex-grow flex flex-col p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto gap-6">
+    <div class="max-w-7xl mx-auto space-y-6">
         
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-            <!-- شريط البحث الفوري -->
-            <div class="lg:col-span-4 relative">
-                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500">
-                    🔍
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center bg-[#151D30] border border-[#334155] p-5 rounded-2xl gap-4">
+            <div class="flex items-center gap-4">
+                <div class="bg-[#10B981] text-white w-14 h-14 rounded-xl flex items-center justify-center text-3xl shadow-lg shadow-emerald-900/30">
+                    🌳
                 </div>
-                <input type="text" id="searchInput" class="w-full pl-4 pr-10 py-3 bg-slate-900 border border-slate-800 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-200 text-sm transition" placeholder="ابحث عن اسم أي فرد في العائلة لتحديده فوراً...">
-                <div id="searchResults" class="hidden absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-h-60 overflow-y-auto z-50 p-2"></div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-white">بوابة شجرة العائلة الرقمية - عائلة كُلَّاب</h1>
+                    <p class="text-xs md:text-sm text-[#94A3B8]">نظام تتبع الفروع الجغرافية لنسب عائلة كُلَّاب الكرام تحت إشراف المسؤول العام والمدقق</p>
+                </div>
             </div>
-
-            <!-- أزرار التبديل بين التبويبات (شجرة / جدول / فروع) -->
-            <div class="lg:col-span-5 flex bg-slate-950 border border-slate-800 p-1 rounded-2xl gap-1">
-                <button onclick="switchTab('tree')" id="tabTreeBtn" class="flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 bg-emerald-500 text-slate-950">🌳 المخطط الشجري</button>
-                <button onclick="switchTab('table')" id="tabTableBtn" class="flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200">📋 عرض الجدول</button>
-                <button onclick="switchTab('branches')" id="tabBranchesBtn" class="hidden flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200">📁 إدارة الفروع</button>
-            </div>
-
-            <!-- أزرار التحكم بالشجرة وتصغيرها وتكبيرها -->
-            <div class="lg:col-span-3 flex gap-2">
-                <button id="zoomInBtn" class="flex-1 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-2xl text-slate-300 font-bold transition text-center text-sm" title="تكبير">+</button>
-                <button id="zoomOutBtn" class="flex-1 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-2xl text-slate-300 font-bold transition text-center text-sm" title="تصغير">-</button>
-                <button id="fitTreeBtn" class="flex-1 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-2xl text-slate-300 font-bold transition text-center text-sm" title="إعادة مركزة">🏠 مركزة</button>
-            </div>
-        </div>
-
-        <!-- دليل معاني الألوان والرموز البصرية للشجرة -->
-        <div class="bg-slate-900/40 border border-slate-800/80 p-4 rounded-2xl flex flex-wrap gap-4 items-center justify-center text-xs">
-            <span class="font-bold text-slate-400">دليل الرموز البصرية:</span>
-            <span class="flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full">👨 ذكور (أزرق)</span>
-            <span class="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full">👩 إناث (زهري)</span>
-            <span class="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">🟢 على قيد الحياة</span>
-            <span class="flex items-center gap-1.5 px-3 py-1 bg-slate-800 text-slate-400 border border-slate-700 rounded-full">🕯️ متوفى رحمه الله</span>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             
-            <!-- مساحة العرض الرئيسية حسب التبويب المختار -->
-            <div class="lg:col-span-8 flex flex-col bg-slate-900/50 border border-slate-800/80 rounded-3xl overflow-hidden relative min-h-[500px]">
-                
-                <!-- تبويب المخطط الشجري الرأسي بزوايا 90 درجة -->
-                <div id="treeTabContent" class="w-full h-full flex flex-col flex-grow">
-                    <div class="absolute top-4 right-4 z-10 px-3 py-1.5 bg-slate-950/80 backdrop-blur border border-slate-800 rounded-xl text-xs font-bold text-slate-400">
-                        📐 مخطط رأسي هرمي (زوايا قائمة 90 درجة لربط الأبناء أسفل آبائهم بدقة)
-                    </div>
-                    <!-- مساحة رسم الشجرة باستخدام Vis-Network -->
-                    <div id="treeCanvas" class="w-full flex-grow h-[600px] cursor-grab active:cursor-grabbing"></div>
-                </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <span id="connection-status" class="text-xs font-semibold px-4 py-2 rounded-full border border-amber-500 bg-amber-500/10 text-amber-500">
+                    🔄 جاري فحص الاتصال بالخادم السحابي...
+                </span>
+                <span id="role-badge" class="text-xs font-semibold px-4 py-2 rounded-lg border border-blue-500 bg-blue-500/10 text-blue-400 hidden">
+                    زائر
+                </span>
+                <button id="login-btn" class="bg-[#10B981] hover:bg-[#059669] text-white text-sm font-semibold px-5 py-2 rounded-xl transition duration-200" onclick="showLoginModal()">
+                    🔐 تسجيل الدخول
+                </button>
+                <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-5 py-2 rounded-xl transition duration-200 hidden" onclick="handleLogout()">
+                    🚪 تسجيل الخروج
+                </button>
+            </div>
+        </header>
 
-                <!-- تبويب جدول أفراد العائلة المعتمدين -->
-                <div id="tableTabContent" class="hidden w-full h-full flex flex-col p-6 flex-grow overflow-x-auto">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-black text-slate-100">📋 قائمة وجدول أفراد عائلة كلاب المعتمدين</h3>
-                        <span id="tableCountBadge" class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-bold">0 فرد</span>
-                    </div>
-                    <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50">
-                        <table class="w-full text-right text-xs sm:text-sm">
-                            <thead class="bg-slate-900 text-slate-400 border-b border-slate-800">
-                                <tr>
-                                    <th class="p-4">المعرف</th>
-                                    <th class="p-4">الاسم الكامل</th>
-                                    <th class="p-4">الزوج/الزوجة</th>
-                                    <th class="p-4">الفرع العائلي</th>
-                                    <th class="p-4">الأب المباشر</th>
-                                    <th class="p-4">الجنس</th>
-                                    <th class="p-4">الحالة</th>
-                                    <th class="p-4 text-center">الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="membersTableBody" class="divide-y divide-slate-800 text-slate-300">
-                                <!-- سيتم تعبئتها ديناميكياً -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="branchesTabContent" class="hidden w-full h-full flex flex-col p-6 flex-grow">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-black text-slate-100">📁 لوحة التحكم وإدارة الفروع العائلية</h3>
-                        <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full font-bold">صلاحية المسؤول العام فقط 👑</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-                        <!-- نموذج إضافة فرع جديد -->
-                        <div class="md:col-span-5 bg-slate-950/40 border border-slate-800 p-5 rounded-2xl">
-                            <h4 class="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
-                                <span>➕</span> إضافة فرع رئيسي جديد
-                            </h4>
-                            <form id="addBranchForm" onsubmit="handleAddBranch(event)" class="space-y-4">
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">اسم الفرع الجديد</label>
-                                    <input type="text" id="branchNameInput" required class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" placeholder="مثال: فرع أحمد صالح كلاب">
-                                </div>
-                                <button type="submit" class="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs transition duration-300">إنشاء الفرع فوراً 🚀</button>
-                            </form>
-                        </div>
-
-                        <!-- جدول الفروع الحالية المعتمدة -->
-                        <div class="md:col-span-7 bg-slate-950/40 border border-slate-800 p-5 rounded-2xl overflow-x-auto">
-                            <h4 class="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
-                                <span>📁</span> قائمة الفروع المعتمدة حالياً
-                            </h4>
-                            <div class="overflow-x-auto rounded-xl border border-slate-800">
-                                <table class="w-full text-right text-xs">
-                                    <thead class="bg-slate-900 text-slate-400 border-b border-slate-800">
-                                        <tr>
-                                            <th class="p-3">المعرف</th>
-                                            <th class="p-3">اسم الفرع</th>
-                                            <th class="p-3 text-center">الإجراءات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="branchesTableBody" class="divide-y divide-slate-800 text-slate-300">
-                                        <!-- سيتم تعبئتها ديناميكياً -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+        <div class="flex flex-col md:flex-row justify-between items-center bg-[#151D30] border border-[#334155] p-4 rounded-2xl gap-4">
+            <!-- Tabs -->
+            <div class="flex bg-[#0B0F19] p-1.5 rounded-xl border border-[#334155] w-full md:w-auto">
+                <button id="tab-tree-btn" class="flex-1 md:flex-initial text-sm font-bold px-5 py-2 rounded-lg bg-[#10B981] text-white transition duration-200" onclick="switchTab('tree')">
+                    🌳 المخطط الشجري
+                </button>
+                <button id="tab-table-btn" class="flex-1 md:flex-initial text-sm font-bold px-5 py-2 rounded-lg text-[#94A3B8] hover:text-white transition duration-200" onclick="switchTab('table')">
+                    📋 عرض الجدول
+                </button>
+                <button id="tab-branches-btn" class="flex-1 md:flex-initial text-sm font-bold px-5 py-2 rounded-lg text-[#94A3B8] hover:text-white transition duration-200 hidden" onclick="switchTab('branches')">
+                    📁 إدارة الفروع
+                </button>
             </div>
 
-            <div class="lg:col-span-4 flex flex-col gap-6">
+            <!-- Search Area -->
+            <div class="relative w-full md:w-96">
+                <input type="text" id="search-input" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-4 py-2.5 text-sm text-white placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] transition duration-200" placeholder="🔍 ابحث عن اسم أي فرد في العائلة لتحديده فوراً..." oninput="handleSearch(this.value)">
+                <div id="search-results-box" class="absolute top-full left-0 right-0 mt-2 bg-[#151D30] border border-[#334155] rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto hidden"></div>
+            </div>
+
+            <!-- Centering Button -->
+            <button class="bg-[#1E293B] hover:bg-[#334155] border border-[#334155] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition duration-200" onclick="resetTreeZoom()">
+                🏠 مركزة
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Sidebar (Controls) -->
+            <div class="lg:col-span-4 space-y-6">
                 
-                <!-- نموذج إضافة عضو جديد للشجرة -->
-                <div id="addMemberCard" class="hidden bg-slate-900/50 border border-slate-800/80 p-5 rounded-3xl relative overflow-hidden">
-                    <div class="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl"></div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-lg">➕</span>
-                        <h3 class="text-lg font-black text-slate-100">إضافة عضو جديد للشجرة</h3>
-                    </div>
-
-                    <form id="addMemberForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <!-- Add Member Form -->
+                <div id="add-member-card" class="bg-[#151D30] border border-[#334155] p-5 rounded-2xl hidden">
+                    <h3 class="text-lg font-bold text-white border-b border-[#334155] pb-3 mb-4 flex items-center gap-2">
+                        <span>➕ إضافة عضو جديد للشجرة</span>
+                    </h3>
+                    <form id="add-member-form" onsubmit="submitNewMember(event)" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-400 mb-1">اسم العضو الجديد بالكامل</label>
-                            <input type="text" id="addName" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200 transition" placeholder="مثال: أحمد مصطفى كلاب">
+                            <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">اسم العضو الجديد بالكامل:</label>
+                            <input type="text" id="new-name" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#10B981]" placeholder="مثال: أحمد مصطفى كلاب" required>
                         </div>
-
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-1">الجنس</label>
-                                <select id="addGender" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200 transition">
+                                <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">الجنس:</label>
+                                <select id="new-gender" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#10B981]">
                                     <option value="male">👨 ذكر</option>
                                     <option value="female">👩 أنثى</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-1">الحالة</label>
-                                <select id="addStatus" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200 transition">
+                                <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">الحالة:</label>
+                                <select id="new-status" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#10B981]">
                                     <option value="alive">🟢 على قيد الحياة</option>
-                                    <option value="deceased">🕯️ متوفى رحمه الله</option>
+                                    <option value="deceased">⚫ متوفى رحمه الله</option>
                                 </select>
                             </div>
                         </div>
-
                         <div>
-                            <label class="block text-xs font-bold text-slate-400 mb-1">الفرع الرئيسي</label>
-                            <select id="addBranch" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200 transition" onchange="updateFathersList()">
-                                <option value="">-- اختر الفرع --</option>
-                                <!-- تعبأ ديناميكياً من الفروع -->
+                            <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">الفرع الرئيسي:</label>
+                            <select id="new-branch-selector" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#10B981]" required onchange="filterFathers()">
+                                <!-- Dynamic Branches -->
                             </select>
                         </div>
-
                         <div>
-                            <label class="block text-xs font-bold text-slate-400 mb-1">يرتبط بـ (الأب المباشر)</label>
-                            <select id="addParentId" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200 transition">
+                            <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">يرتبط بـ (الأب المباشر):</label>
+                            <select id="new-father-selector" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#10B981]">
                                 <option value="">-- لا يوجد (يعتبر رأساً فرعياً جديداً) --</option>
                             </select>
+                            <p id="head-restriction-warning" class="text-[11px] text-amber-500 mt-1 hidden">⚠️ فقط المسؤول العام ADMIN لديه صلاحية إضافة رأس شجرة بدون تحديد أب.</p>
                         </div>
-
-                        <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-sm transition duration-300">
+                        <button type="submit" class="w-full bg-[#10B981] hover:bg-[#059669] text-white text-sm font-bold py-2.5 rounded-xl transition duration-200">
                             إرسال الطلب للاعتماد 🚀
                         </button>
                     </form>
                 </div>
 
-                <!-- لوحة مراجعة واعتماد طلبات التدقيق المعلقة -->
-                <div id="pendingMembersCard" class="hidden bg-slate-900/50 border border-slate-800/80 p-5 rounded-3xl flex-grow flex flex-col max-h-[400px]">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg">🕒</span>
-                            <h3 class="text-lg font-black text-slate-100">طلبات التدقيق المعلقة</h3>
+                <!-- Pending Approvals list -->
+                <div id="pending-approvals-card" class="bg-[#151D30] border border-[#334155] p-5 rounded-2xl hidden">
+                    <h3 class="text-lg font-bold text-white border-b border-[#334155] pb-3 mb-4 flex justify-between items-center">
+                        <span>📋 طلبات التدقيق المعلقة</span>
+                        <span id="pending-count" class="bg-amber-500/20 text-amber-400 text-xs px-2.5 py-0.5 rounded-full font-bold">0</span>
+                    </h3>
+                    <div id="pending-list" class="space-y-3 max-h-72 overflow-y-auto pr-1">
+                        <p class="text-xs text-[#94A3B8] text-center py-4">لا توجد طلبات معلقة حالياً.</p>
+                    </div>
+                </div>
+
+                <!-- Stats card -->
+                <div class="bg-[#151D30] border border-[#334155] p-5 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white border-b border-[#334155] pb-3 mb-4">📊 إحصائيات سلالة العائلة</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-[#1E293B] p-3.5 rounded-xl border border-[#334155]">
+                            <span class="block text-xs text-[#94A3B8] font-bold">إجمالي الأفراد</span>
+                            <span id="stat-total" class="text-2xl font-black text-white">0</span>
                         </div>
-                        <span id="pendingCount" class="px-2.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-bold">0</span>
+                        <div class="bg-blue-500/10 p-3.5 rounded-xl border border-blue-500/30">
+                            <span class="block text-xs text-blue-400 font-bold">الذكور 👨</span>
+                            <span id="stat-males" class="text-2xl font-black text-blue-400">0</span>
+                        </div>
+                        <div class="bg-pink-500/10 p-3.5 rounded-xl border border-pink-500/30">
+                            <span class="block text-xs text-pink-400 font-bold">الإناث 👩</span>
+                            <span id="stat-females" class="text-2xl font-black text-pink-400">0</span>
+                        </div>
+                        <div class="bg-slate-500/10 p-3.5 rounded-xl border border-slate-500/30">
+                            <span class="block text-xs text-slate-400 font-bold">الوفيات 🕯️</span>
+                            <span id="stat-deceased" class="text-2xl font-black text-slate-400">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-6">
+                
+                <!-- Tab View 1: Tree Network Canvas -->
+                <div id="view-tree" class="bg-[#151D30] border border-[#334155] rounded-2xl overflow-hidden relative">
+                    <!-- Visual Legend indicators -->
+                    <div class="absolute top-4 right-4 bg-[#0B0F19]/90 border border-[#334155] px-4 py-2.5 rounded-xl z-10 flex flex-wrap gap-4 text-xs">
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500 border border-blue-400 inline-block"></span> ذكور (أزرق)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-pink-500 border border-pink-400 inline-block"></span> إناث (زهري)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-500 border border-slate-400 inline-block"></span> متوفى رحمه الله</span>
                     </div>
 
-                    <!-- قائمة الطلبات المعلقة -->
-                    <div id="pendingList" class="flex-grow overflow-y-auto space-y-3 pr-1 text-sm">
-                        <div class="text-center py-8 text-slate-500 text-xs">لا توجد أي طلبات معلقة حالياً...</div>
+                    <div id="tree-loading" class="absolute inset-0 bg-[#0B0F19]/90 flex items-center justify-center z-20">
+                        <p class="text-[#10B981] font-bold text-md animate-pulse">🌳 جاري بناء المخطط الشجري الرأسي بزوايا 90 درجة...</p>
+                    </div>
+
+                    <div id="tree-canvas" class="w-full h-[650px]"></div>
+                </div>
+
+                <!-- Tab View 2: Interactive Table Grid -->
+                <div id="view-table" class="bg-[#151D30] border border-[#334155] rounded-2xl p-5 hidden">
+                    <h3 class="text-lg font-bold text-white mb-4">📋 جدول كشاف أعضاء العائلة المعتمدين</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right border-collapse">
+                            <thead>
+                                <tr class="border-b border-[#334155] text-[#94A3B8] text-xs">
+                                    <th class="pb-3 font-bold pr-2">المعرف</th>
+                                    <th class="pb-3 font-bold">الاسم بالكامل</th>
+                                    <th class="pb-3 font-bold">الأب</th>
+                                    <th class="pb-3 font-bold">الفرع الرئيسي</th>
+                                    <th class="pb-3 font-bold">الجنس</th>
+                                    <th class="pb-3 font-bold">الحالة</th>
+                                    <th id="table-actions-header" class="pb-3 font-bold text-center hidden">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-members-rows" class="text-sm divide-y divide-[#334155]/50">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab View 3: Manage Branches (Global ADMIN only) -->
+                <div id="view-branches" class="bg-[#151D30] border border-[#334155] rounded-2xl p-5 hidden">
+                    <h3 class="text-lg font-bold text-white mb-2">📁 لوحة التحكم وإدارة الفروع العائلية</h3>
+                    <p class="text-xs text-[#94A3B8] border-b border-[#334155] pb-3 mb-5">تتيح لك كمسؤول عام إضافة الفروع الرئيسية وتحديثها أو حذفها وسينعكس ذلك فورياً في نموذج الإضافة.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Add Branch form -->
+                        <div class="bg-[#1E293B] border border-[#334155] p-4 rounded-xl">
+                            <h4 class="text-sm font-bold text-white mb-3">➕ إضافة فرع عائلي جديد</h4>
+                            <form id="add-branch-form" onsubmit="submitNewBranch(event)" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs text-[#94A3B8] mb-1">اسم الفرع الجديد:</label>
+                                    <input type="text" id="new-branch-name" class="w-full bg-[#0B0F19] border border-[#334155] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#10B981]" placeholder="مثال: فرع أحمد صالح كلاب" required>
+                                </div>
+                                <button type="submit" class="w-full bg-[#10B981] hover:bg-[#059669] text-xs font-bold py-2 rounded-lg transition duration-200">
+                                    إنشاء الفرع فوراً 💾
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Current branches list -->
+                        <div class="bg-[#1E293B] border border-[#334155] p-4 rounded-xl">
+                            <h4 class="text-sm font-bold text-white mb-3">📂 قائمة الفروع الحالية</h4>
+                            <div id="branches-list-container" class="space-y-2.5 max-h-60 overflow-y-auto">
+                                <!-- Dynamic Branches -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 
             </div>
         </div>
-    </main>
+    </div>
 
-    <div id="editMemberModal" class="hidden fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 p-6 rounded-3xl relative shadow-2xl">
-            <div class="absolute -top-10 -right-10 w-32 h-32 bg-teal-500/10 rounded-full blur-3xl"></div>
-            
-            <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                <div class="flex items-center gap-2">
-                    <span class="text-lg">✏️</span>
-                    <h3 class="text-lg font-black text-slate-100">تعديل بيانات العضو</h3>
-                </div>
-                <button onclick="hideEditModal()" class="text-slate-400 hover:text-slate-100 text-lg">✕</button>
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div class="bg-[#151D30] border border-[#334155] w-full max-w-sm rounded-2xl p-6 space-y-4">
+            <div class="text-center">
+                <span class="text-3xl">🔐</span>
+                <h3 class="text-lg font-bold text-white mt-2">تسجيل دخول بوابة الهوية</h3>
+                <p class="text-xs text-[#94A3B8] mt-1">الرجاء إدخال اسم المستخدم وكلمة المرور الخاصة بك</p>
             </div>
-
-            <form id="editMemberForm" onsubmit="handleEditFormSubmit(event)" class="space-y-4">
-                <input type="hidden" id="editId">
+            <div class="space-y-3 text-right">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1">الاسم الكامل</label>
-                    <input type="text" id="editName" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200">
+                    <label class="block text-xs font-bold text-[#94A3B8] mb-1">اسم المستخدم:</label>
+                    <input type="text" id="login-username" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#10B981]" placeholder="ADMIN">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1">الزوج/الزوجة (إن وجد)</label>
-                    <input type="text" id="editSpouse" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200" placeholder="مثال: فاطمة">
+                    <label class="block text-xs font-bold text-[#94A3B8] mb-1">كلمة المرور:</label>
+                    <input type="password" id="login-password" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#10B981]" placeholder="••••••••">
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button class="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-sm font-bold py-2.5 rounded-xl transition duration-200" onclick="handleLogin()">
+                    دخول 🔑
+                </button>
+                <button class="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-bold py-2.5 rounded-xl border border-red-500/20 transition duration-200" onclick="hideLoginModal()">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Member Modal -->
+    <div id="edit-member-modal" class="modal fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div class="bg-[#151D30] border border-[#334155] w-full max-w-md rounded-2xl p-6 space-y-4">
+            <h3 class="text-lg font-bold text-white border-b border-[#334155] pb-2">✏️ تعديل بيانات الفرد</h3>
+            <form id="edit-member-form" onsubmit="submitEditMember(event)" class="space-y-4 text-right">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">الاسم بالكامل:</label>
+                    <input type="text" id="edit-name" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#10B981]" required>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">الجنس</label>
-                        <select id="editGender" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200">
+                        <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">الجنس:</label>
+                        <select id="edit-gender" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-3 py-2 text-sm text-white focus:outline-none">
                             <option value="male">👨 ذكر</option>
                             <option value="female">👩 أنثى</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">الحالة</label>
-                        <select id="editStatus" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200">
+                        <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">الحالة الصحية:</label>
+                        <select id="edit-status" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-3 py-2 text-sm text-white focus:outline-none">
                             <option value="alive">🟢 على قيد الحياة</option>
-                            <option value="deceased">🕯️ متوفى رحمه الله</option>
+                            <option value="deceased">⚫ متوفى رحمه الله</option>
                         </select>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1">الفرع الرئيسي</label>
-                    <select id="editBranch" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200" onchange="updateEditFathersList()">
-                        <option value="">-- اختر الفرع --</option>
-                        <!-- تعبأ ديناميكياً -->
-                    </select>
+                    <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">الفرع العائلي:</label>
+                    <select id="edit-branch-selector" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-4 py-2 text-sm text-white focus:outline-none" required></select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1">يرتبط بـ (الأب المباشر)</label>
-                    <select id="editParentId" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-emerald-500 text-slate-200">
-                        <option value="">-- لا يوجد (يعتبر رأساً فرعياً) --</option>
+                    <label class="block text-xs font-bold text-[#94A3B8] mb-1.5">يرتبط بـ (الأب):</label>
+                    <select id="edit-father-selector" class="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-4 py-2 text-sm text-white focus:outline-none">
+                        <!-- Dynamic -->
                     </select>
+                    <p id="edit-head-warning" class="text-[11px] text-amber-500 mt-1 hidden">⚠️ فقط المسؤول العام ADMIN لديه صلاحية إلغاء الأب لجعل هذا العضو رأساً للشجرة.</p>
                 </div>
-
-                <div class="flex gap-2 pt-3">
-                    <button type="submit" class="flex-grow py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs transition">حفظ التعديلات سحابياً 💾</button>
-                    <button type="button" onclick="hideEditModal()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">إلغاء</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- نافذة تعديل الفرع -->
-    <div id="editBranchModal" class="hidden fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 p-6 rounded-3xl relative shadow-2xl">
-            <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                <h3 class="text-base font-black text-slate-100 flex items-center gap-2">
-                    <span>✏️</span> تعديل اسم الفرع العائلي
-                </h3>
-                <button onclick="hideEditBranchModal()" class="text-slate-400 hover:text-slate-100 text-lg">✕</button>
-            </div>
-            <form id="editBranchForm" onsubmit="handleEditBranchSubmit(event)" class="space-y-4">
-                <input type="hidden" id="editBranchId">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">الاسم الجديد للفرع</label>
-                    <input type="text" id="editBranchNameInput" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
-                </div>
-                <div class="flex gap-2">
-                    <button type="submit" class="flex-grow py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs transition">حفظ التعديل 💾</button>
-                    <button type="button" onclick="hideEditBranchModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">إلغاء</button>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-sm font-bold py-2.5 rounded-xl">
+                        حفظ التعديلات 💾
+                    </button>
+                    <button type="button" class="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-bold py-2.5 rounded-xl border border-red-500/20" onclick="hideEditMemberModal()">
+                        إلغاء
+                    </button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- نظام التنبيهات المخصص كلياً بديل الـ alert لمنع النوافذ المزعجة -->
-    <div id="customToast" class="hidden fixed bottom-6 left-6 max-w-sm w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-2xl z-50 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-            <span id="toastIcon" class="text-xl">✨</span>
-            <p id="toastMessage" class="text-xs font-bold text-slate-100"></p>
-        </div>
-        <button onclick="hideToast()" class="text-slate-400 hover:text-slate-100 text-sm">✕</button>
-    </div>
-
-    <!-- نافذة تأكيد مخصصة بديلة للـ confirm لمنع القيود والمشاكل -->
-    <div id="customConfirm" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 p-6 rounded-3xl text-center shadow-2xl">
-            <span class="text-4xl inline-block mb-3">⚠️</span>
-            <h4 class="text-lg font-black text-slate-100 mb-2">تأكيد الإجراء</h4>
-            <p id="confirmMessage" class="text-xs text-slate-400 mb-6"></p>
-            <div class="flex gap-3 justify-center">
-                <button id="confirmYesBtn" class="px-5 py-2 bg-rose-500 hover:bg-rose-600 text-slate-950 font-bold rounded-xl text-xs transition">نعم، متأكد</button>
-                <button onclick="hideConfirm()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">إلغاء</button>
-            </div>
         </div>
     </div>
 
     <script>
+        // API Base Endpoint
         const API_URL = "https://kallab-backend.onrender.com";
 
-        // الحسابات الستة المعتمدة بالكامل من قبلك يا بشمهندس رفيق
+        // Account list requested by the user
         const ACCOUNTS = {
-            "ADMIN": { pass: "422652149", role: "admin", branch: null, label: "المسؤول العام" },
-            "admin_hussein": { pass: "hussein123", role: "branch_admin", branch: 1, label: "مسؤول فرع حسين" },
-            "admin_mohammed": { pass: "mohammed123", role: "branch_admin", branch: 2, label: "مسؤول فرع محمد" },
-            "admin_salah": { pass: "salah123", role: "branch_admin", branch: 3, label: "مسؤول فرع صلاح" },
-            "auditor": { pass: "audit2026", role: "auditor", branch: null, label: "المدقق المعتمد" },
-            "family_visitor": { pass: "visitor2026", role: "viewer", branch: null, label: "زائر العائلة الكريمة" }
+            "ADMIN": { pass: "422652149", role: "admin", label: "المسؤول العام", branch: null },
+            "HUSSEN": { pass: "100200300", role: "branch_admin", label: "مشرف فرع حسين كلاب", branch: 1 },
+            "MOHAMMED": { pass: "102030", role: "branch_admin", label: "مشرف فرع محمد كلاب", branch: 2 },
+            "SALAH": { pass: "10002000", role: "branch_admin", label: "مشرف فرع صلاح كلاب", branch: 3 },
+            "PROSSES": { pass: "10201020", role: "auditor", label: "المدقق المعتمد", branch: null },
+            "100": { pass: "100", role: "viewer", label: "مشاهد عام (قراءة فقط)", branch: null }
         };
 
-        let session = {
-            username: null,
-            role: null,
-            branch: null,
-            label: null,
-            isOnline: false
-        };
+        // State variables
+        let networkInstance = null;
+        let allFamilyMembers = [];
+        let allBranches = [];
+        let currentUserId = null;
+        let currentUserRole = "visitor";
+        let currentUserBranchId = null;
 
-        let network = null;
-        let originalMembersData = [];
-        let activeTab = 'tree';
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            checkSaaSConnection();
+            loadAllData();
+        });
 
-        window.onload = async function() {
+        // Check Connection
+        async function checkSaaSConnection() {
+            const statusBadge = document.getElementById('connection-status');
             try {
-                const res = await fetch(`${API_URL}/family-tree/`, { signal: AbortSignal.timeout(5000) });
-                if (res.ok) {
-                    session.isOnline = true;
-                    updateConnectionStatus(true);
+                const response = await fetch(`${API_URL}/family-tree/`, { method: 'GET' });
+                if (response.ok) {
+                    statusBadge.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+                    statusBadge.style.color = "#10B981";
+                    statusBadge.style.borderColor = "#10B981";
+                    statusBadge.textContent = "🟢 متصل بخادم Python السحابي (Render)";
                 } else {
-                    throw new Error("Offline Mode");
+                    throw new Error();
                 }
             } catch (err) {
-                session.isOnline = false;
-                updateConnectionStatus(false);
-                initializeLocalMockData();
-            }
-        };
-
-        function showToast(message, icon = "✨") {
-            const toast = document.getElementById("customToast");
-            document.getElementById("toastMessage").textContent = message;
-            document.getElementById("toastIcon").textContent = icon;
-            toast.classList.remove("hidden");
-            setTimeout(() => {
-                toast.classList.add("hidden");
-            }, 4000);
-        }
-
-        function hideToast() {
-            document.getElementById("customToast").classList.add("hidden");
-        }
-
-        let confirmCallback = null;
-        function showConfirm(message, callback) {
-            document.getElementById("confirmMessage").textContent = message;
-            document.getElementById("customConfirm").classList.remove("hidden");
-            confirmCallback = callback;
-        }
-
-        function hideConfirm() {
-            document.getElementById("customConfirm").classList.add("hidden");
-            confirmCallback = null;
-        }
-
-        document.getElementById("confirmYesBtn").onclick = function() {
-            if (confirmCallback) confirmCallback();
-            hideConfirm();
-        };
-
-        function updateConnectionStatus(isOnline) {
-            const statusCard = document.getElementById("connectionStatus");
-            if (isOnline) {
-                statusCard.className = "px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-                statusCard.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> متصل بخادم Python السحابي (Render)`;
-            } else {
-                statusCard.className = "px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 bg-blue-500/10 text-blue-400 border border-blue-500/20";
-                statusCard.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> نمط المحاكاة الذكي نشط (Local DB)`;
+                statusBadge.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
+                statusBadge.style.color = "#60A5FA";
+                statusBadge.style.borderColor = "#3B82F6";
+                statusBadge.textContent = "🔵 نمط المحاكاة المحلي نشط وآمن";
             }
         }
 
-        function initializeLocalMockData() {
-            if (!localStorage.getItem("local_family_members")) {
-                const defaultMembers = [
-                    { id: 1, name: "صالح محمد يوسف كلاب", parent: null, branch: null, gender: "male", status: "deceased" },
-                    { id: 2, name: "حسين صالح كلاب", parent: 1, branch: 1, gender: "male", status: "deceased" },
-                    { id: 3, name: "محمد صالح كلاب", parent: 1, branch: 2, gender: "male", status: "deceased" },
-                    { id: 4, name: "صلاح صالح كلاب", parent: 1, branch: 3, gender: "male", status: "deceased" },
-                    { id: 5, name: "إسماعيل حسين كلاب", parent: 2, branch: 1, gender: "male", status: "alive" },
-                    { id: 6, name: "منى حسين كلاب", parent: 2, branch: 1, gender: "female", status: "alive" },
-                    { id: 7, name: "أحمد محمد كلاب", parent: 3, branch: 2, gender: "male", status: "alive" },
-                    { id: 8, name: "سليمان صلاح كلاب", parent: 4, branch: 3, gender: "male", status: "alive" }
-                ];
-                localStorage.setItem("local_family_members", JSON.stringify(defaultMembers));
-            }
-            if (!localStorage.getItem("local_pending_members")) {
-                localStorage.setItem("local_pending_members", JSON.stringify([]));
-            }
-            if (!localStorage.getItem("local_branches")) {
-                const defaultBranches = [
-                    { id: 1, name: "فرع حسين كلاب" },
-                    { id: 2, name: "فرع محمد كلاب" },
-                    { id: 3, name: "فرع صلاح كلاب" }
-                ];
-                localStorage.setItem("local_branches", JSON.stringify(defaultBranches));
-            }
-        }
-
-        function handleLogin(e) {
-            e.preventDefault();
-            const username = document.getElementById("usernameInput").value.trim();
-            const password = document.getElementById("passwordInput").value.trim();
-
-            const user = ACCOUNTS[username];
-            if (!user) {
-                showToast("خطأ: اسم المستخدم غير صحيح!", "❌");
-                return;
-            }
-
-            if (user.pass !== password) {
-                showToast("خطأ: كلمة المرور غير صحيحة!", "❌");
-                return;
-            }
-
-            session.username = username;
-            session.role = user.role;
-            session.branch = user.branch;
-            session.label = user.label;
-
-            document.getElementById("authSection").classList.add("hidden");
-            document.getElementById("appSection").classList.remove("hidden");
-            document.getElementById("logoutBtn").classList.remove("hidden");
-            document.getElementById("userInfo").classList.remove("hidden");
-            document.getElementById("currentUsername").textContent = session.username;
-            document.getElementById("currentUserRole").textContent = session.label;
-
-            configurePermissions();
-            loadTreeAndData();
-            showToast(`أهلاً بك يا ${session.label} في البوابة الرقمية!`, "🟢");
-        }
-
-        function handleLogout() {
-            session.username = null;
-            session.role = null;
-            session.branch = null;
-            session.label = null;
-
-            document.getElementById("authSection").classList.remove("hidden");
-            document.getElementById("appSection").classList.add("hidden");
-            document.getElementById("logoutBtn").classList.add("hidden");
-            document.getElementById("userInfo").classList.add("hidden");
-
-            document.getElementById("loginForm").reset();
-            showToast("تم تسجيل الخروج بنجاح.", "🚪");
-        }
-
-        function configurePermissions() {
-            const addCard = document.getElementById("addMemberCard");
-            const pendingCard = document.getElementById("pendingMembersCard");
-            const tabBranchesBtn = document.getElementById("tabBranchesBtn");
-            const branchSelect = document.getElementById("addBranch");
-
-            if (session.role === "viewer") {
-                addCard.classList.add("hidden");
-                pendingCard.classList.add("hidden");
-                tabBranchesBtn.classList.add("hidden");
-            } else if (session.role === "branch_admin") {
-                addCard.classList.remove("hidden");
-                pendingCard.classList.add("hidden");
-                tabBranchesBtn.classList.add("hidden");
-                branchSelect.value = session.branch;
-                branchSelect.setAttribute("disabled", "true");
-            } else if (session.role === "auditor") {
-                addCard.classList.add("hidden");
-                pendingCard.classList.remove("hidden");
-                tabBranchesBtn.classList.add("hidden");
-            } else if (session.role === "admin") {
-                addCard.classList.remove("hidden");
-                pendingCard.classList.remove("hidden");
-                tabBranchesBtn.classList.remove("hidden"); // تفعيل لوحة إدارة الفروع للمسؤول الرئيسي فقط
-                branchSelect.value = "";
-                branchSelect.removeAttribute("disabled");
-            }
-        }
-
-        function getBranches() {
-            let branches = JSON.parse(localStorage.getItem("local_branches"));
-            if (!branches) {
-                branches = [
-                    { id: 1, name: "فرع حسين كلاب" },
-                    { id: 2, name: "فرع محمد كلاب" },
-                    { id: 3, name: "فرع صلاح كلاب" }
-                ];
-                localStorage.setItem("local_branches", JSON.stringify(branches));
-            }
-            return branches;
-        }
-
-        async function loadTreeAndData() {
+        // Load All Data (Branches and Members)
+        async function loadAllData() {
             try {
-                if (session.isOnline) {
-                    const res = await fetch(`${API_URL}/family-tree/`);
-                    originalMembersData = await res.json();
-                } else {
-                    originalMembersData = JSON.parse(localStorage.getItem("local_family_members") || "[]");
+                // Branches Loading
+                const resBranches = await fetch(`${API_URL}/branches`);
+                allBranches = resBranches.ok ? await resBranches.json() : getMockBranches();
+                
+                // Members Loading
+                const resMembers = await fetch(`${API_URL}/family-tree/`);
+                allFamilyMembers = resMembers.ok ? await resMembers.json() : getMockMembers();
+
+                // Build Forms and Visualizers
+                populateBranchSelectors();
+                renderHierarchicalTree();
+                updateGeneralStats();
+                renderMembersTable();
+                
+                if (currentUserRole !== 'visitor') {
+                    loadPendingApprovals();
                 }
-
-                populateBranchDropdowns();
-                updateFathersList();
-                renderVisTree();
-                renderFamilyTable();
-                renderBranchesTable();
-                loadPendingList();
+                
+                document.getElementById('tree-loading').style.display = 'none';
             } catch (err) {
-                console.log("خطأ أثناء جلب البيانات:", err);
+                console.warn("Falling back to local simulation data.");
+                allBranches = getMockBranches();
+                allFamilyMembers = getMockMembers();
+                
+                populateBranchSelectors();
+                renderHierarchicalTree();
+                updateGeneralStats();
+                renderMembersTable();
+                
+                if (currentUserRole !== 'visitor') {
+                    loadPendingApprovals();
+                }
+                
+                document.getElementById('tree-loading').style.display = 'none';
             }
         }
 
-        function populateBranchDropdowns() {
-            const branches = getBranches();
-            const addBranchSelect = document.getElementById("addBranch");
-            const editBranchSelect = document.getElementById("editBranch");
-
-            addBranchSelect.innerHTML = `<option value="">-- اختر الفرع --</option>`;
-            editBranchSelect.innerHTML = `<option value="">-- اختر الفرع --</option>`;
-
-            branches.forEach(b => {
-                addBranchSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`;
-                editBranchSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`;
-            });
-
-            if (session.role === "branch_admin" && session.branch) {
-                addBranchSelect.value = session.branch;
-                addBranchSelect.setAttribute("disabled", "true");
-            }
-        }
-
-        function updateFathersList() {
-            const branchVal = document.getElementById("addBranch").value;
-            const select = document.getElementById("addParentId");
+        // Branch population
+        function populateBranchSelectors() {
+            const addSelector = document.getElementById('new-branch-selector');
+            const editSelector = document.getElementById('edit-branch-selector');
             
-            // قيد حاسم: لا يُسمح بإضافة رأس شجرة بدون أب لغير المسؤول العام (ADMIN)
-            if (session.role === "admin") {
-                select.innerHTML = `<option value="">-- لا يوجد (يعتبر رأساً فرعياً جديداً) --</option>`;
+            let htmlOptions = '<option value="">-- اختر الفرع الرئيسي --</option>';
+            allBranches.forEach(b => {
+                htmlOptions += `<option value="${b.id}">📂 ${b.name}</option>`;
+            });
+            
+            addSelector.innerHTML = htmlOptions;
+            editSelector.innerHTML = htmlOptions;
+
+            // Handle branch selection filtering
+            filterFathers();
+        }
+
+        // Filter valid fathers dropdown based on selected branch
+        function filterFathers() {
+            const selectedBranchId = parseInt(document.getElementById('new-branch-selector').value);
+            const fatherSelector = document.getElementById('new-father-selector');
+            const warningText = document.getElementById('head-restriction-warning');
+            
+            fatherSelector.innerHTML = '';
+
+            // Restriction for Admin Adding Root node
+            if (currentUserRole === 'admin') {
+                fatherSelector.innerHTML = '<option value="">-- لا يوجد (يعتبر رأساً فرعياً جديداً) --</option>';
+                warningText.classList.add('hidden');
             } else {
-                select.innerHTML = `<option value="" disabled selected>-- اختر الأب المباشر (إجباري لمشرفي الفروع) --</option>`;
+                fatherSelector.innerHTML = '<option value="" disabled selected>-- يجب تحديد الأب لنسب العضو --</option>';
+                warningText.classList.remove('hidden');
             }
 
-            if (!branchVal) return;
+            if (!selectedBranchId) return;
 
-            const targetBranchId = parseInt(branchVal);
-            const eligibleFathers = originalMembersData.filter(m => m.branch === targetBranchId || m.parent === null);
-
-            eligibleFathers.forEach(f => {
-                select.innerHTML += `<option value="${f.id}">${f.name} (معرّف #${f.id})</option>`;
+            // Only list approved members belonging to the same branch
+            const validFathers = allFamilyMembers.filter(m => m.branch === selectedBranchId && m.is_verified !== false);
+            validFathers.forEach(f => {
+                fatherSelector.innerHTML += `<option value="${f.id}">${f.name} (معرّف #${f.id})</option>`;
             });
-        }
-
-        function detectGenderAndStatus(m) {
-            let gender = m.gender || "male";
-            let status = m.status || "alive";
-            
-            const name = m.name || "";
-            if (name.includes("بنت") || name.includes("أم ") || name.endsWith("ة") || name.endsWith("ى") || m.spouse) {
-                if (!m.gender) gender = "female";
-            }
-            if (name.includes("المرحوم") || name.includes("🕯️") || name.includes("رحمه الله") || m.status === "deceased") {
-                status = "deceased";
-            }
-            return { gender, status };
         }
 
         function calculateGenerationLevels(members) {
-            const levels = {};
-            const visited = {};
+            let memberMap = {};
+            
+            // Map members
+            members.forEach(m => {
+                const parentId = m.parent !== undefined ? m.parent : m.parent_id;
+                memberMap[m.id] = { ...m, level: null, children: [], finalParent: parentId };
+            });
 
-            function getLevel(id) {
-                if (levels[id] !== undefined) return levels[id];
-                if (visited[id]) return 0;
-                
-                visited[id] = true;
-                const member = members.find(m => m.id === id);
-                
-                if (!member || !member.parent) {
-                    levels[id] = 0;
-                    return 0;
+            // Map parents & children relationships
+            members.forEach(m => {
+                const parentId = m.parent !== undefined ? m.parent : m.parent_id;
+                if (parentId && memberMap[parentId]) {
+                    memberMap[parentId].children.push(m.id);
                 }
+            });
 
-                const parentLevel = getLevel(member.parent);
-                levels[id] = parentLevel + 1;
-                return levels[id];
+            // Roots (Those without valid parents inside the map)
+            let roots = members.filter(m => {
+                const parentId = m.parent !== undefined ? m.parent : m.parent_id;
+                return !parentId || !memberMap[parentId];
+            });
+
+            // Level assignment using recursion with loop protection
+            function assignLevel(nodeId, currentLevel) {
+                if (memberMap[nodeId] && memberMap[nodeId].level === null) {
+                    memberMap[nodeId].level = currentLevel;
+                    memberMap[nodeId].children.forEach(childId => {
+                        assignLevel(childId, currentLevel + 1);
+                    });
+                }
             }
 
-            members.forEach(m => getLevel(m.id));
-            return levels;
+            roots.forEach(r => {
+                assignLevel(r.id, 0);
+            });
+
+            return Object.values(memberMap);
         }
 
-        function renderVisTree() {
-            const container = document.getElementById("treeCanvas");
-            const levels = calculateGenerationLevels(originalMembersData);
+        function renderHierarchicalTree() {
+            const container = document.getElementById('tree-canvas');
+            const approvedMembers = allFamilyMembers.filter(m => m.is_verified !== false);
+            
+            // Generate exact level placements
+            const leveledMembers = calculateGenerationLevels(approvedMembers);
 
             const nodesArray = [];
             const edgesArray = [];
 
-            originalMembersData.forEach(m => {
-                const detected = detectGenderAndStatus(m);
-                let borderCol = "#3b82f6";
-                let bgCol = "rgba(37, 99, 235, 0.1)";
-                let fontCol = "#f1f5f9";
-                let badge = "👨 ذكر";
+            leveledMembers.forEach(m => {
+                let borderCol = "#334155";
+                let bgCol = "#1E293B";
+                let fontColor = "#F8FAFC";
+                let shapeSuffix = "👨";
 
-                if (detected.gender === "female") {
-                    borderCol = "#ec4899";
+                if (m.gender === "female") {
+                    borderCol = "#EC4899";
                     bgCol = "rgba(236, 72, 153, 0.1)";
-                    badge = "👩 أنثى";
+                    shapeSuffix = "👩";
+                } else {
+                    borderCol = "#3B82F6";
+                    bgCol = "rgba(37, 99, 235, 0.1)";
                 }
 
-                if (detected.status === "deceased") {
-                    borderCol = "#64748b";
+                if (m.status === "deceased") {
+                    borderCol = "#64748B";
                     bgCol = "#111827";
-                    fontCol = "#94a3b8";
-                    badge += " | 🕯️ متوفى رحمه الله";
+                    fontColor = "#94A3B8";
                 }
 
                 nodesArray.push({
                     id: m.id,
-                    label: `${m.name}${detected.status === 'deceased' ? ' 🕯️' : ''}${m.spouse ? `\n(زوجته: ${m.spouse})` : ''}`,
-                    level: levels[m.id] !== undefined ? levels[m.id] : 0,
-                    shape: "box",
+                    label: `${m.name}\n${m.status === 'deceased' ? '🕯️' : shapeSuffix}`,
+                    level: m.level, // strictly mapped level force hierarchical layout
+                    shape: 'box',
                     color: {
                         background: bgCol,
                         border: borderCol,
                         highlight: {
-                            background: "#10b981",
-                            border: "#10b981"
+                            background: '#10B981',
+                            border: '#10B981'
                         }
                     },
                     font: {
-                        color: fontCol,
-                        face: "Tajawal",
-                        size: 14,
+                        color: fontColor,
+                        face: 'Cairo',
+                        size: 13,
                         bold: true
                     },
                     margin: 12,
                     borderWidth: 2,
-                    title: `اسم العضو: ${m.name}\nالحالة والنوع: ${badge}`
+                    title: `الاسم: ${m.name}\nالمعرّف: #${m.id}\nالنوع: ${m.gender === 'male' ? 'ذكر' : 'أنثى'}`
                 });
 
-                if (m.parent) {
+                const parentId = m.parent !== undefined ? m.parent : m.parent_id;
+                if (parentId) {
                     edgesArray.push({
-                        from: Number(m.parent),
+                        from: parentId,
                         to: m.id,
-                        color: { color: "#475569", highlight: "#10b981" },
-                        width: 2,
-                        arrows: "to",
+                        color: { color: '#475569', highlight: '#10B981' },
+                        width: 2.5,
+                        arrows: 'to',
                         smooth: {
-                            type: "cubicBezier",
-                            forceDirection: "vertical",
-Roundness: 0.2
+                            type: 'cubicBezier', // strictly orthogonal curved right angle
+                            forceDirection: 'vertical',
+                            roundness: 0.5
                         }
                     });
                 }
@@ -775,18 +580,17 @@ Roundness: 0.2
             const options = {
                 layout: {
                     hierarchical: {
-                        enabled: true,
-                        direction: "UD",
-                        sortMethod: "directed",
-                        nodeSpacing: 250,
-                        levelSeparation: 160,
+                        direction: 'UD', // strictly top to bottom vertical layout
+                        sortMethod: 'directed',
+                        levelSeparation: 140,
+                        nodeSpacing: 220,
                         parentCentralization: true,
-                        blockShifting: true,
-                        edgeMinimization: true
+                        edgeMinimization: true,
+                        blockShifting: true
                     }
                 },
                 physics: {
-                    enabled: false
+                    enabled: false // strict layout positioning
                 },
                 interaction: {
                     dragNodes: true,
@@ -795,248 +599,407 @@ Roundness: 0.2
                 }
             };
 
-            network = new vis.Network(container, data, options);
-
-            network.on("doubleClick", function(params) {
-                if (params.nodes.length > 0) {
-                    const memberId = params.nodes[0];
-                    if (session.role === "admin" || session.role === "branch_admin") {
-                        showEditModal(memberId);
-                    }
-                }
-            });
-
-            document.getElementById("zoomInBtn").onclick = () => network.zoomIn();
-            document.getElementById("zoomOutBtn").onclick = () => network.zoomOut();
-            document.getElementById("fitTreeBtn").onclick = () => network.fit({ animation: true });
+            networkInstance = new vis.Network(container, data, options);
         }
 
-        function renderFamilyTable() {
-            const tableBody = document.getElementById("membersTableBody");
-            const tableCountBadge = document.getElementById("tableCountBadge");
-            const branches = getBranches();
+        function renderMembersTable() {
+            const tableBody = document.getElementById('table-members-rows');
+            const actionsHeader = document.getElementById('table-actions-header');
             
-            tableBody.innerHTML = "";
-            tableCountBadge.textContent = `${originalMembersData.length} فرد`;
+            tableBody.innerHTML = '';
+            
+            const approved = allFamilyMembers.filter(m => m.is_verified !== false);
+            
+            if (currentUserRole === 'admin') {
+                actionsHeader.classList.remove('hidden');
+            } else {
+                actionsHeader.classList.add('hidden');
+            }
 
-            originalMembersData.forEach(m => {
-                const detected = detectGenderAndStatus(m);
-                const bObj = branches.find(b => b.id === m.branch);
-                const branchName = bObj ? bObj.name : "الجد الأكبر / غير مصنف";
+            approved.forEach(m => {
+                const parentId = m.parent !== undefined ? m.parent : m.parent_id;
+                const fatherName = parentId ? (allFamilyMembers.find(f => f.id === parentId)?.name || "غير معروف") : "لا يوجد";
+                const branchName = allBranches.find(b => b.id === m.branch)?.name || "عام";
                 
-                const parentNode = originalMembersData.find(f => Number(f.id) === Number(m.parent));
-                const parentName = parentNode ? parentNode.name : "غير معروف / رأس فرع";
-
-                let actionsHTML = `<span class="text-slate-500 text-xs">قراءة فقط 👁️</span>`;
-                if (session.role === "admin" || (session.role === "branch_admin" && session.branch === m.branch)) {
-                    actionsHTML = `
-                        <div class="flex gap-2 justify-center">
-                            <button onclick="showEditModal(${m.id})" class="px-2.5 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 rounded-xl text-xs font-bold transition">✏️ تعديل</button>
-                            <button onclick="deleteMember(${m.id})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-bold transition">🗑️ حذف</button>
-                        </div>
-                    `;
-                }
-
-                const tr = document.createElement("tr");
-                tr.className = "hover:bg-slate-900/40 transition duration-150";
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-[#334155]/30 hover:bg-[#1E293B]/30 text-white";
+                
                 tr.innerHTML = `
-                    <td class="p-4 font-bold text-slate-500">#${m.id}</td>
-                    <td class="p-4 font-bold text-slate-100">${m.name}</td>
-                    <td class="p-4 text-slate-400">${m.spouse || "لا يوجد"}</td>
-                    <td class="p-4"><span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">${branchName}</span></td>
-                    <td class="p-4 text-slate-400">${parentName}</td>
-                    <td class="p-4">${detected.gender === 'male' ? '👨 ذكر' : '👩 أنثى'}</td>
-                    <td class="p-4">${detected.status === 'alive' ? '🟢 حي' : '🕯️ متوفى'}</td>
-                    <td class="p-4 text-center">${actionsHTML}</td>
+                    <td class="py-3 font-semibold text-[#94A3B8] pr-2">#${m.id}</td>
+                    <td class="py-3 font-bold">${m.name}</td>
+                    <td class="py-3 text-[#94A3B8]">${fatherName}</td>
+                    <td class="py-3"><span class="bg-[#1E293B] text-emerald-400 text-xs px-2 py-1 rounded border border-[#334155]">${branchName}</span></td>
+                    <td class="py-3">${m.gender === 'male' ? '👨 ذكر' : '👩 أنثى'}</td>
+                    <td class="py-3">${m.status === 'deceased' ? '🕯️ متوفى' : '💚 حي'}</td>
+                    ${currentUserRole === 'admin' ? `
+                    <td class="py-3 text-center space-x-1 space-x-reverse">
+                        <button class="bg-[#3B82F6] hover:bg-blue-600 text-white text-xs px-2.5 py-1 rounded" onclick="openEditMember(${m.id})">✏️ تعديل</button>
+                        <button class="bg-red-500 hover:bg-red-600 text-white text-xs px-2.5 py-1 rounded" onclick="deleteMember(${m.id})">🗑️ حذف</button>
+                    </td>` : ''}
                 `;
                 tableBody.appendChild(tr);
             });
         }
 
-        window.switchTab = function(tabName) {
-            activeTab = tabName;
-            const treeBtn = document.getElementById("tabTreeBtn");
-            const tableBtn = document.getElementById("tabTableBtn");
-            const branchesBtn = document.getElementById("tabBranchesBtn");
-
-            const treeContent = document.getElementById("treeTabContent");
-            const tableContent = document.getElementById("tableTabContent");
-            const branchesContent = document.getElementById("branchesTabContent");
-
-            treeBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200";
-            tableBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200";
-            branchesBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 text-slate-400 hover:text-slate-200";
-
-            treeContent.classList.add("hidden");
-            tableContent.classList.add("hidden");
-            branchesContent.classList.add("hidden");
-
-            if (tabName === 'tree') {
-                treeBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 bg-emerald-500 text-slate-950";
-                treeContent.classList.remove("hidden");
-                setTimeout(() => { if (network) network.fit(); }, 150);
-            } else if (tabName === 'table') {
-                tableBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 bg-emerald-500 text-slate-950";
-                tableContent.classList.remove("hidden");
-            } else if (tabName === 'branches') {
-                branchesBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition duration-300 bg-emerald-500 text-slate-950";
-                branchesContent.classList.remove("hidden");
+        // Live Search Handling
+        function handleSearch(term) {
+            const resultBox = document.getElementById('search-results-box');
+            if (!term.trim()) {
+                resultBox.classList.add('hidden');
+                return;
             }
-        }
 
-        window.showEditModal = function(id) {
-            const m = originalMembersData.find(item => item.id === id);
-            if (!m) return;
-
-            const detected = detectGenderAndStatus(m);
-            document.getElementById("editId").value = m.id;
-            document.getElementById("editName").value = m.name;
-            document.getElementById("editSpouse").value = m.spouse || "";
-            document.getElementById("editGender").value = detected.gender;
-            document.getElementById("editStatus").value = detected.status;
-            document.getElementById("editBranch").value = m.branch || "";
-
-            updateEditFathersList();
-            document.getElementById("editParentId").value = m.parent || "";
-
-            document.getElementById("editMemberModal").classList.remove("hidden");
-        };
-
-        window.hideEditModal = function() {
-            document.getElementById("editMemberModal").classList.add("hidden");
-        };
-
-        window.updateEditFathersList = function() {
-            const branchVal = document.getElementById("editBranch").value;
-            const select = document.getElementById("editParentId");
-            const currentEditId = parseInt(document.getElementById("editId").value);
+            const matched = allFamilyMembers.filter(m => m.is_verified !== false && m.name.includes(term));
             
-            // قيد حاسم للتعديل: غير مسموح بفك الارتباط بدون أب لغير المسؤول العام (ADMIN)
-            if (session.role === "admin") {
-                select.innerHTML = `<option value="">-- لا يوجد (يعتبر رأساً فرعياً) --</option>`;
+            resultBox.innerHTML = '';
+            if (matched.length === 0) {
+                resultBox.innerHTML = '<div class="p-3 text-xs text-[#94A3B8]">لا توجد نتائج مطابقة</div>';
             } else {
-                select.innerHTML = `<option value="" disabled selected>-- اختر الأب المباشر (إجباري) --</option>`;
-            }
-
-            if (!branchVal) return;
-
-            const targetBranchId = parseInt(branchVal);
-            const eligibleFathers = originalMembersData.filter(m => (m.branch === targetBranchId || m.parent === null) && m.id !== currentEditId);
-
-            eligibleFathers.forEach(f => {
-                select.innerHTML += `<option value="${f.id}">${f.name} (معرّف #${f.id})</option>`;
-            });
-        };
-
-        async function handleEditFormSubmit(e) {
-            e.preventDefault();
-
-            const id = parseInt(document.getElementById("editId").value);
-            const name = document.getElementById("editName").value.trim();
-            const spouse = document.getElementById("editSpouse").value.trim();
-            const gender = document.getElementById("editGender").value;
-            const status = document.getElementById("editStatus").value;
-            const branch = parseInt(document.getElementById("editBranch").value);
-            const parentIdVal = document.getElementById("editParentId").value;
-            const parent = parentIdVal ? parseInt(parentIdVal) : null;
-
-            // حماية برمجية تمنع مشرف الفرع من إرسال طلب بدون أب
-            if (session.role !== "admin" && !parent) {
-                showToast("⚠️ غير مسموح لك بإضافة أو تعديل عضو بدون تحديد أب مباشر له!", "❌");
-                return;
-            }
-
-            try {
-                if (session.isOnline) {
-                    const url = `${API_URL}/edit-member/${id}?first_name=${encodeURIComponent(name)}&spouse_name=${encodeURIComponent(spouse)}&parent_id=${parent || ''}&branch_id=${branch || ''}&user_role=${session.role}`;
-                    const res = await fetch(url, { method: "PUT" });
-                    if (res.ok) {
-                        showToast("تم تحديث بيانات العضو سحابياً بنجاح!", "✅");
-                    }
-                } else {
-                    let localMembers = JSON.parse(localStorage.getItem("local_family_members") || "[]");
-                    const index = localMembers.findIndex(item => item.id === id);
-                    if (index !== -1) {
-                        localMembers[index].name = name;
-                        localMembers[index].spouse = spouse;
-                        localMembers[index].gender = gender;
-                        localMembers[index].status = status;
-                        localMembers[index].branch = branch;
-                        localMembers[index].parent = parent;
-
-                        localStorage.setItem("local_family_members", JSON.stringify(localMembers));
-                        showToast("تم تحديث بيانات العضو محلياً بنجاح!", "✅");
-                    }
-                }
-
-                hideEditModal();
-                loadTreeAndData();
-            } catch (err) {
-                showToast("تعذر الاتصال بالخادم لحفظ التعديلات.", "⚠️");
-            }
-        }
-
-        // محرك البحث الفوري والتركيز الحركي
-        const searchInput = document.getElementById("searchInput");
-        const searchResults = document.getElementById("searchResults");
-
-        searchInput.addEventListener("input", function() {
-            const val = this.value.trim();
-            if (!val) {
-                searchResults.classList.add("hidden");
-                return;
-            }
-
-            const matches = originalMembersData.filter(m => m.name.includes(val));
-            searchResults.innerHTML = "";
-
-            if (matches.length === 0) {
-                searchResults.innerHTML = `<div class="text-xs text-slate-500 text-center py-2">لا توجد نتائج مطابقة...</div>`;
-            } else {
-                matches.forEach(m => {
-                    const div = document.createElement("div");
-                    div.className = "p-2 hover:bg-slate-800 rounded-xl cursor-pointer text-xs flex justify-between items-center transition";
-                    div.innerHTML = `<span class="font-bold text-slate-300">${m.name}</span>`;
+                matched.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = "p-3 text-xs hover:bg-[#1E293B] cursor-pointer border-b border-[#334155]/40 text-white";
+                    div.innerHTML = `🔍 ${m.name}`;
                     div.onclick = () => {
-                        searchResults.classList.add("hidden");
-                        searchInput.value = m.name;
-                        
-                        switchTab('tree');
-
-                        network.focus(m.id, {
-                            scale: 1.3,
-                            animation: {
-                                duration: 1000,
-                                easingFunction: "easeInOutQuad"
-                            }
-                        });
-                        network.selectNodes([m.id]);
+                        focusOnMember(m.id);
+                        resultBox.classList.add('hidden');
+                        document.getElementById('search-input').value = '';
                     };
-                    searchResults.appendChild(div);
+                    resultBox.appendChild(div);
                 });
             }
-            searchResults.classList.remove("hidden");
-        });
+            resultBox.classList.remove('hidden');
+        }
 
-        document.addEventListener("click", function(e) {
-            if (e.target !== searchInput) {
-                searchResults.classList.add("hidden");
+        function focusOnMember(id) {
+            if (networkInstance) {
+                networkInstance.selectNodes([id]);
+                networkInstance.focus(id, {
+                    scale: 1.2,
+                    animation: {
+                        duration: 800,
+                        easingFunction: 'easeInOutQuad'
+                    }
+                });
             }
-        });
+        }
 
-        async function handleFormSubmit(e) {
-            e.preventDefault();
+        function resetTreeZoom() {
+            if (networkInstance) {
+                networkInstance.fit({
+                    animation: {
+                        duration: 800,
+                        easingFunction: 'easeInOutQuad'
+                    }
+                });
+            }
+        }
 
-            const name = document.getElementById("addName").value.trim();
-            const gender = document.getElementById("addGender").value;
-            const status = document.getElementById("addStatus").value;
-            const branch = parseInt(document.getElementById("addBranch").value);
-            const parentIdVal = document.getElementById("addParentId").value;
-            const parent = parentIdVal ? parseInt(parentIdVal) : null;
+        // Stats calculation
+        function updateGeneralStats() {
+            const approved = allFamilyMembers.filter(m => m.is_verified !== false);
+            document.getElementById('stat-total').textContent = approved.length;
+            document.getElementById('stat-males').textContent = approved.filter(m => m.gender === 'male').length;
+            document.getElementById('stat-females').textContent = approved.filter(m => m.gender === 'female').length;
+            document.getElementById('stat-deceased').textContent = approved.filter(m => m.status === 'deceased').length;
+        }
 
-            // حظر برماني إضافي لمنع الإدخال العشوائي لغير الآدمن العام
-            if (session.role !== "admin" && !parent) {
-                showToast("⚠️ غير مسموح لك بإضافة عضو جديد بدون تحديد والده (الأب المباشر)!", "❌");
+        // Tab switches
+        function switchTab(tab) {
+            document.getElementById('view-tree').classList.add('hidden');
+            document.getElementById('view-table').classList.add('hidden');
+            document.getElementById('view-branches').classList.add('hidden');
+
+            document.getElementById('tab-tree-btn').className = "flex-1 md:flex-initial text-sm font-bold px-5 py-2 rounded-lg text-[#94A3B8] hover:text-white transition duration-200";
+            document.getElementById('tab-table-btn').className = "flex-1 md:flex-initial text-sm font-bold px-5 py-2 rounded-lg text-[#94A3B8] hover:text-white transition duration-200";
+            document.getElementById('tab-branches-btn').className = "flex-1 md:flex-initial text-sm font-bold px-5 py-2 rounded-lg text-[#94A3B8] hover:text-white transition duration-200";
+
+            if (tab === 'tree') {
+                document.getElementById('view-tree').classList.remove('hidden');
+                document.getElementById('tab-tree-btn').className = "flex-1 md:flex-initial text-sm font-bold px-5 py-2 rounded-lg bg-[#10B981] text-white transition duration-200";
+                setTimeout(() => { if (networkInstance) networkInstance.fit(); }, 200);
+            } else if (tab === 'table') {
+                document.getElementById('view-table').classList.remove('hidden');
+                document.getElementById('tab-table-btn').className = "flex-1 md:flex-initial text-sm font-bold px-5 py-2 rounded-lg bg-[#10B981] text-white transition duration-200";
+                renderMembersTable();
+            } else if (tab === 'branches') {
+                document.getElementById('view-branches').classList.remove('hidden');
+                document.getElementById('tab-branches-btn').className = "flex-1 md:flex-initial text-sm font-bold px-5 py-2 rounded-lg bg-[#10B981] text-white transition duration-200";
+                renderBranchesPanel();
+            }
+        }
+
+        function renderBranchesPanel() {
+            const container = document.getElementById('branches-list-container');
+            container.innerHTML = '';
+
+            allBranches.forEach(b => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-[#0B0F19] border border-[#334155]/60 p-3 rounded-lg text-xs";
+                div.innerHTML = `
+                    <span class="font-bold text-white">📂 ${b.name} (معرّف #${b.id})</span>
+                    <div class="flex gap-1">
+                        <button class="bg-[#3B82F6] hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="editBranch(${b.id}, '${b.name}')">✏️ تعديل</button>
+                        <button class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded" onclick="deleteBranch(${b.id})">🗑️ حذف</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function showLoginModal() {
+            document.getElementById('login-modal').style.display = 'flex';
+        }
+        function hideLoginModal() {
+            document.getElementById('login-modal').style.display = 'none';
+        }
+
+        function handleLogin() {
+            const userIn = document.getElementById('login-username').value.trim();
+            const passIn = document.getElementById('login-password').value.trim();
+
+            if (ACCOUNTS[userIn] && ACCOUNTS[userIn].pass === passIn) {
+                const session = ACCOUNTS[userIn];
+                currentUserId = userIn;
+                currentUserRole = session.role;
+                currentUserBranchId = session.branch;
+
+                applyUserInterfaceSession(session.label);
+                hideLoginModal();
+                loadAllData();
+            } else {
+                alert("❌ خطأ أمني: اسم المستخدم أو كلمة المرور غير صحيحة!");
+            }
+        }
+
+        function applyUserInterfaceSession(roleLabel) {
+            document.getElementById('role-badge').textContent = `👑 ${roleLabel}`;
+            document.getElementById('role-badge').classList.remove('hidden');
+            document.getElementById('login-btn').classList.add('hidden');
+            document.getElementById('logout-btn').classList.remove('hidden');
+
+            // Privileged Panels
+            if (currentUserRole === 'admin' || currentUserRole === 'branch_admin' || currentUserRole === 'auditor') {
+                document.getElementById('add-member-card').classList.remove('hidden');
+                document.getElementById('pending-approvals-card').classList.remove('hidden');
+            }
+
+            if (currentUserRole === 'admin') {
+                document.getElementById('tab-branches-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('tab-branches-btn').classList.add('hidden');
+            }
+
+            // In Branch Admin scenario, lock selection to their specific branch
+            const branchSelector = document.getElementById('new-branch-selector');
+            if (currentUserRole === 'branch_admin' && currentUserBranchId) {
+                branchSelector.value = currentUserBranchId;
+                branchSelector.setAttribute('disabled', 'true');
+            } else {
+                branchSelector.removeAttribute('disabled');
+            }
+
+            filterFathers();
+        }
+
+        function handleLogout() {
+            currentUserId = null;
+            currentUserRole = "visitor";
+            currentUserBranchId = null;
+
+            document.getElementById('role-badge').classList.add('hidden');
+            document.getElementById('login-btn').classList.remove('hidden');
+            document.getElementById('logout-btn').classList.add('hidden');
+            
+            document.getElementById('add-member-card').classList.add('hidden');
+            document.getElementById('pending-approvals-card').classList.add('hidden');
+            document.getElementById('tab-branches-btn').classList.add('hidden');
+
+            switchTab('tree');
+            loadAllData();
+        }
+
+        async function submitNewMember(event) {
+            event.preventDefault();
+            const name = document.getElementById('new-name').value.trim();
+            const gender = document.getElementById('new-gender').value;
+            const status = document.getElementById('new-status').value;
+            const branchId = parseInt(document.getElementById('new-branch-selector').value);
+            const fatherIdVal = document.getElementById('new-father-selector').value;
+            const parentId = fatherIdVal ? parseInt(fatherIdVal) : null;
+
+            // Security guardrail: Check if added root node (no father) by non-admin
+            if (!parentId && currentUserRole !== 'admin') {
+                alert("❌ عذراً! صلاحية إضافة رأس شجرة جديدة بدون أب مقتصرة فقط على المسؤول العام ADMIN.");
+                return;
+            }
+
+            const payload = {
+                name: name,
+                gender: gender,
+                status: status,
+                branch: branchId,
+                parent: parentId,
+                is_verified: false // pending moderation
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/add-member/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert("✨ تم إرسال طلب إضافة الفرد بنجاح للتدقيق العام!");
+                    document.getElementById('add-member-form').reset();
+                    loadAllData();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                // Mock simulation
+                const mockId = allFamilyMembers.length + 1;
+                allFamilyMembers.push({ id: mockId, ...payload, is_verified: false });
+                alert("✨ (محاكاة) تم إرسال طلب العضو الجديد وهو بانتظار الاعتماد والتدقيق!");
+                document.getElementById('add-member-form').reset();
+                loadAllData();
+            }
+        }
+
+        // Pending Moderation section
+        function loadPendingApprovals() {
+            const listDiv = document.getElementById('pending-list');
+            const countBadge = document.getElementById('pending-count');
+            listDiv.innerHTML = '';
+
+            const pending = allFamilyMembers.filter(m => m.is_verified === false);
+            countBadge.textContent = pending.length;
+
+            if (pending.length === 0) {
+                listDiv.innerHTML = '<p class="text-xs text-[#94A3B8] text-center py-4">لا توجد طلبات معلقة حالياً.</p>';
+                return;
+            }
+
+            pending.forEach(p => {
+                const parentId = p.parent !== undefined ? p.parent : p.parent_id;
+                const fatherName = parentId ? (allFamilyMembers.find(f => f.id === parentId)?.name || "غير معروف") : "لا يوجد";
+                
+                const div = document.createElement('div');
+                div.className = "bg-[#1E293B] border-r-4 border-amber-500 rounded-lg p-3 text-xs space-y-2";
+                div.innerHTML = `
+                    <div class="flex justify-between font-bold text-white">
+                        <span>${p.name}</span>
+                        <span class="text-amber-500">معلق</span>
+                    </div>
+                    <div class="text-[#94A3B8]">الأب: ${fatherName} | النوع: ${p.gender === 'male' ? 'ذكر' : 'أنثى'}</div>
+                    ${currentUserRole === 'admin' || currentUserRole === 'auditor' ? `
+                    <div class="flex gap-1.5 pt-1">
+                        <button class="bg-[#10B981] hover:bg-[#059669] text-white text-[10px] px-2.5 py-1 rounded font-bold" onclick="approveMember(${p.id})">✅ اعتماد</button>
+                        <button class="bg-red-500 hover:bg-red-600 text-white text-[10px] px-2.5 py-1 rounded font-bold" onclick="rejectMember(${p.id})">❌ رفض</button>
+                    </div>` : ''}
+                `;
+                listDiv.appendChild(div);
+            });
+        }
+
+        async function approveMember(id) {
+            try {
+                const response = await fetch(`${API_URL}/verify-member/${id}`, { method: 'PUT' });
+                if (response.ok) {
+                    alert("✅ تم اعتماد وتثبيت الفرد في الشجرة العائلية السحابية!");
+                    loadAllData();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                const idx = allFamilyMembers.findIndex(m => m.id === id);
+                if (idx !== -1) {
+                    allFamilyMembers[idx].is_verified = true;
+                    alert("✅ (محاكاة) تم اعتماد وتثبيت الفرد بنجاح في الشجرة المحلية!");
+                    loadAllData();
+                }
+            }
+        }
+
+        async function rejectMember(id) {
+            if (!confirm("هل أنت متأكد من رفض وحذف هذا الطلب المعلق نهائياً؟")) return;
+            try {
+                const response = await fetch(`${API_URL}/delete-member/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert("🗑️ تم رفض وحذف الطلب بنجاح.");
+                    loadAllData();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                allFamilyMembers = allFamilyMembers.filter(m => m.id !== id);
+                alert("🗑️ (محاكاة) تم رفض وحذف السجل بنجاح.");
+                loadAllData();
+            }
+        }
+
+        function openEditMember(id) {
+            const member = allFamilyMembers.find(m => m.id === id);
+            if (!member) return;
+
+            document.getElementById('edit-id').value = member.id;
+            document.getElementById('edit-name').value = member.name;
+            document.getElementById('edit-gender').value = member.gender;
+            document.getElementById('edit-status').value = member.status;
+
+            // Populate selectors inside modal
+            const editBranchSel = document.getElementById('edit-branch-selector');
+            const editFatherSel = document.getElementById('edit-father-selector');
+            const warningText = document.getElementById('edit-head-warning');
+
+            // Populate branches
+            editBranchSel.innerHTML = '';
+            allBranches.forEach(b => {
+                editBranchSel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+            });
+            editBranchSel.value = member.branch;
+
+            // Populate fathers
+            editFatherSel.innerHTML = '';
+            if (currentUserRole === 'admin') {
+                editFatherSel.innerHTML = '<option value="">-- لا يوجد (رأس شجرة جديد) --</option>';
+                warningText.classList.add('hidden');
+            } else {
+                editFatherSel.innerHTML = '<option value="" disabled>-- يجب تحديد الأب --</option>';
+                warningText.classList.remove('hidden');
+            }
+
+            // Exclude current node and its descendants from father selection to prevent recursion loops
+            const parentId = member.parent !== undefined ? member.parent : member.parent_id;
+            const validFathers = allFamilyMembers.filter(m => m.id !== member.id && m.parent_id !== member.id && m.is_verified !== false);
+            
+            validFathers.forEach(f => {
+                editFatherSel.innerHTML += `<option value="${f.id}">${f.name}</option>`;
+            });
+
+            if (parentId) {
+                editFatherSel.value = parentId;
+            }
+
+            document.getElementById('edit-member-modal').style.display = 'flex';
+        }
+
+        function hideEditMemberModal() {
+            document.getElementById('edit-member-modal').style.display = 'none';
+        }
+
+        async function submitEditMember(event) {
+            event.preventDefault();
+            const id = parseInt(document.getElementById('edit-id').value);
+            const name = document.getElementById('edit-name').value.trim();
+            const gender = document.getElementById('edit-gender').value;
+            const status = document.getElementById('edit-status').value;
+            const branch = parseInt(document.getElementById('edit-branch-selector').value);
+            const fatherVal = document.getElementById('edit-father-selector').value;
+            const parent = fatherVal ? parseInt(fatherVal) : null;
+
+            if (!parent && currentUserRole !== 'admin') {
+                alert("❌ عذراً! إلغاء الأب وجعل هذا الفرد رأساً للشجرة متاح فقط للمسؤول العام ADMIN.");
                 return;
             }
 
@@ -1045,246 +1008,126 @@ Roundness: 0.2
                 gender: gender,
                 status: status,
                 branch: branch,
-                parent: parent,
-                is_verified: false
+                parent: parent
             };
 
             try {
-                if (session.isOnline) {
-                    const url = `${API_URL}/add-member/?first_name=${encodeURIComponent(name)}&branch_id=${branch}&parent_id=${parent || ''}&user_role=${session.role}`;
-                    const res = await fetch(url, { method: "POST" });
-                    if (res.ok) {
-                        showToast("تم إرسال طلب العضو الجديد للتدقيق بنجاح!", "✨");
-                    }
-                } else {
-                    const localPending = JSON.parse(localStorage.getItem("local_pending_members") || "[]");
-                    const mockPendingItem = { id: Date.now(), ...payload };
-                    localPending.push(mockPendingItem);
-                    localStorage.setItem("local_pending_members", JSON.stringify(localPending));
-                    showToast("تم تقديم الطلب بنجاح وهو بانتظار الاعتماد!", "✨");
-                }
-
-                document.getElementById("addMemberForm").reset();
-                if (session.role === "branch_admin") {
-                    document.getElementById("addBranch").value = session.branch;
-                }
-                loadTreeAndData();
-            } catch (err) {
-                showToast("تعذر الاتصال بالخادم، جرى الحفظ محلياً.", "⚠️");
-            }
-        }
-
-        async function loadPendingList() {
-            if (session.role !== "admin" && session.role !== "auditor") return;
-
-            const listDiv = document.getElementById("pendingList");
-            const countBadge = document.getElementById("pendingCount");
-            let pendingData = [];
-
-            try {
-                if (session.isOnline) {
-                    const res = await fetch(`${API_URL}/pending-members/`);
-                    pendingData = await res.json();
-                } else {
-                    pendingData = JSON.parse(localStorage.getItem("local_pending_members") || "[]");
-                }
-
-                countBadge.textContent = pendingData.length;
-
-                if (pendingData.length === 0) {
-                    listDiv.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">لا توجد أي طلبات معلقة حالياً...</div>`;
-                    return;
-                }
-
-                listDiv.innerHTML = "";
-                const branches = getBranches();
-
-                pendingData.forEach(p => {
-                    const bObj = branches.find(b => b.id === p.branch);
-                    const branchName = bObj ? bObj.name : "غير معروف";
-
-                    const item = document.createElement("div");
-                    item.className = "bg-slate-950/80 border border-slate-900 p-3.5 rounded-2xl flex flex-col gap-3";
-                    item.innerHTML = `
-                        <div>
-                            <div class="font-bold text-slate-200 text-sm">${p.name}</div>
-                            <div class="text-[10px] text-slate-500 mt-1">الفرع: ${branchName} | الأب: ${p.parent || 'رأس فرع جديد'}</div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="approvePendingMember(${p.id})" class="flex-1 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-bold transition">اعتماد ✅</button>
-                            <button onclick="rejectPendingMember(${p.id})" class="flex-1 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-bold transition">رفض ❌</button>
-                        </div>
-                    `;
-                    listDiv.appendChild(item);
+                const response = await fetch(`${API_URL}/edit-member/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
-            } catch (err) {
-                console.log("حدث خطأ بقائمة التدقيق:", err);
-            }
-        }
-
-        window.approvePendingMember = async function(id) {
-            try {
-                if (session.isOnline) {
-                    const res = await fetch(`${API_URL}/verify-member/${id}?user_role=${session.role}`, { method: "PUT" });
-                    if (res.ok) showToast("تم اعتماد العضو في الشجرة بنجاح!", "✅");
+                if (response.ok) {
+                    alert("💾 تم تعديل البيانات بنجاح!");
+                    hideEditMemberModal();
+                    loadAllData();
                 } else {
-                    let localPending = JSON.parse(localStorage.getItem("local_pending_members") || "[]");
-                    const approvedNode = localPending.find(p => p.id === id);
-
-                    if (approvedNode) {
-                        let localMembers = JSON.parse(localStorage.getItem("local_family_members") || "[]");
-                        const nextId = localMembers.reduce((max, m) => m.id > max ? m.id : max, 0) + 1;
-
-                        approvedNode.id = nextId;
-                        localMembers.push(approvedNode);
-
-                        localStorage.setItem("local_family_members", JSON.stringify(localMembers));
-                        localStorage.setItem("local_pending_members", JSON.stringify(localPending.filter(p => p.id !== id)));
-                        showToast("تم اعتماد العضو في الشجرة بنجاح!", "✅");
-                    }
+                    throw new Error();
                 }
-                loadTreeAndData();
             } catch (err) {
-                showToast("تعذر استكمال الاعتماد.", "⚠️");
+                const idx = allFamilyMembers.findIndex(m => m.id === id);
+                if (idx !== -1) {
+                    allFamilyMembers[idx] = { ...allFamilyMembers[idx], ...payload };
+                    alert("💾 (محاكاة) تم تعديل بيانات العضو بنجاح!");
+                    hideEditMemberModal();
+                    loadAllData();
+                }
             }
-        };
-
-        window.rejectPendingMember = function(id) {
-            showConfirm("هل تريد رفض وحذف هذا الطلب المعلق نهائياً؟", async () => {
-                try {
-                    if (session.isOnline) {
-                        const res = await fetch(`${API_URL}/delete-member/${id}?user_role=${session.role}`, { method: "DELETE" });
-                        if (res.ok) showToast("تم رفض وحذف الطلب بنجاح.", "🗑️");
-                    } else {
-                        let localPending = JSON.parse(localStorage.getItem("local_pending_members") || "[]");
-                        localStorage.setItem("local_pending_members", JSON.stringify(localPending.filter(p => p.id !== id)));
-                        showToast("تم رفض وحذف الطلب بنجاح.", "🗑️");
-                    }
-                    loadTreeAndData();
-                } catch (err) {
-                    showToast("تعذر استكمال الحذف.", "⚠️");
-                }
-            });
-        };
-
-        window.deleteMember = function(id) {
-            showConfirm("هل أنت متأكد من حذف هذا العضو بالكامل من الشجرة وقاعدة البيانات؟", async () => {
-                try {
-                    if (session.isOnline) {
-                        const res = await fetch(`${API_URL}/delete-member/${id}?user_role=${session.role}`, { method: "DELETE" });
-                        if (res.ok) showToast("تم حذف العضو بنجاح.", "🗑️");
-                    } else {
-                        let localMembers = JSON.parse(localStorage.getItem("local_family_members") || "[]");
-                        localStorage.setItem("local_family_members", JSON.stringify(localMembers.filter(m => m.id !== id)));
-                        showToast("تم حذف العضو بنجاح.", "🗑️");
-                    }
-                    loadTreeAndData();
-                } catch (err) {
-                    showToast("تعذر حذف السجل من الخادم.", "⚠️");
-                }
-            });
-        };
-
-        function renderBranchesTable() {
-            const tableBody = document.getElementById("branchesTableBody");
-            if (!tableBody) return;
-
-            tableBody.innerHTML = "";
-            const branches = getBranches();
-
-            branches.forEach(b => {
-                const tr = document.createElement("tr");
-                tr.className = "hover:bg-slate-900/40 transition duration-150";
-                tr.innerHTML = `
-                    <td class="p-3 font-bold text-slate-500">#${b.id}</td>
-                    <td class="p-3 font-bold text-slate-200">${b.name}</td>
-                    <td class="p-3 text-center">
-                        <div class="flex gap-2 justify-center">
-                            <button onclick="showEditBranchModal(${b.id}, '${b.name}')" class="px-2 py-0.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 rounded-lg text-xs transition">✏️ تعديل</button>
-                            <button onclick="deleteBranch(${b.id})" class="px-2 py-0.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs transition">🗑️ حذف</button>
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
-            });
         }
 
-        window.handleAddBranch = function(e) {
-            e.preventDefault();
-            if (session.role !== "admin") return;
-
-            const nameInput = document.getElementById("branchNameInput");
-            const branchName = nameInput.value.trim();
-            if (!branchName) return;
-
-            let branches = getBranches();
-            const nextId = branches.reduce((max, b) => b.id > max ? b.id : max, 0) + 1;
-
-            branches.push({ id: nextId, name: branchName });
-            localStorage.setItem("local_branches", JSON.stringify(branches));
-
-            nameInput.value = "";
-            showToast("تم إنشاء الفرع العائلي الجديد بنجاح!", "✅");
-            loadTreeAndData();
-        };
-
-        window.showEditBranchModal = function(id, currentName) {
-            document.getElementById("editBranchId").value = id;
-            document.getElementById("editBranchNameInput").value = currentName;
-            document.getElementById("editBranchModal").classList.remove("hidden");
-        };
-
-        window.hideEditBranchModal = function() {
-            document.getElementById("editBranchModal").classList.add("hidden");
-        };
-
-        window.handleEditBranchSubmit = function(e) {
-            e.preventDefault();
-            if (session.role !== "admin") return;
-
-            const id = parseInt(document.getElementById("editBranchId").value);
-            const newName = document.getElementById("editBranchNameInput").value.trim();
-            if (!newName) return;
-
-            let branches = getBranches();
-            const index = branches.findIndex(b => b.id === id);
-            if (index !== -1) {
-                branches[index].name = newName;
-                localStorage.setItem("local_branches", JSON.stringify(branches));
-                showToast("تم تحديث اسم الفرع بنجاح!", "✅");
+        async function deleteMember(id) {
+            if (!confirm("هل أنت متأكد من حذف هذا العضو نهائياً من الشجرة والجدول؟")) return;
+            try {
+                const response = await fetch(`${API_URL}/delete-member/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert("🗑️ تم الحذف بنجاح!");
+                    loadAllData();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                allFamilyMembers = allFamilyMembers.filter(m => m.id !== id);
+                alert("🗑️ (محاكاة) تم حذف الفرد من قاعدة البيانات المحلية.");
+                loadAllData();
             }
+        }
 
-            hideEditBranchModal();
-            loadTreeAndData();
-        };
-
-        window.deleteBranch = function(id) {
-            if (session.role !== "admin") return;
-
-            showConfirm("هل أنت متأكد من حذف هذا الفرع العائلي بالكامل؟ سيتم فك ارتباط أفراد هذا الفرع.", () => {
-                let branches = getBranches();
-                branches = branches.filter(b => b.id !== id);
-                localStorage.setItem("local_branches", JSON.stringify(branches));
-
-                let localMembers = JSON.parse(localStorage.getItem("local_family_members") || "[]");
-                localMembers.forEach(m => {
-                    if (m.branch === id) m.branch = null;
+        async function submitNewBranch(event) {
+            event.preventDefault();
+            const branchName = document.getElementById('new-branch-name').value.trim();
+            
+            try {
+                const response = await fetch(`${API_URL}/branches`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: branchName })
                 });
-                localStorage.setItem("local_family_members", JSON.stringify(localMembers));
+                if (response.ok) {
+                    alert("📂 تم إنشاء الفرع العائلي بنجاح!");
+                    document.getElementById('add-branch-form').reset();
+                    loadAllData();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                const nextId = allBranches.length + 1;
+                allBranches.push({ id: nextId, name: branchName });
+                alert("📂 (محاكاة) تم إنشاء الفرع العائلي محلياً بنجاح!");
+                document.getElementById('add-branch-form').reset();
+                loadAllData();
+            }
+        }
 
-                showToast("تم حذف الفرع بنجاح وفك ارتباط أعضائه.", "🗑️");
-                loadTreeAndData();
-            });
-        };
+        async function deleteBranch(id) {
+            if (!confirm("هل أنت متأكد من حذف هذا الفرع؟ جميع الأفراد المرتبطين به سيبقون ولكن بدون فرع مخصص.")) return;
+            try {
+                const response = await fetch(`${API_URL}/branches/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert("🗑️ تم حذف الفرع بنجاح!");
+                    loadAllData();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                allBranches = allBranches.filter(b => b.id !== id);
+                alert("🗑️ (محاكاة) تم حذف الفرع عائلياً.");
+                loadAllData();
+            }
+        }
 
+        function editBranch(id, currentName) {
+            const newName = prompt("أدخل الاسم الجديد للفرع العائلي:", currentName);
+            if (!newName || !newName.trim()) return;
+
+            const idx = allBranches.findIndex(b => b.id === id);
+            if (idx !== -1) {
+                allBranches[idx].name = newName.trim();
+                alert("✏️ (محاكاة) تم تحديث اسم الفرع.");
+                loadAllData();
+            }
+        }
+
+        // Mock Fallback generators
+        function getMockBranches() {
+            return [
+                { id: 1, name: "فرع حسين كلاب" },
+                { id: 2, name: "فرع محمد كلاب" },
+                { id: 3, name: "فرع صلاح كلاب" }
+            ];
+        }
+
+        function getMockMembers() {
+            return [
+                { id: 1, name: "صالح محمد يوسف كلاب", parent: null, branch: 3, gender: "male", status: "deceased", is_verified: true },
+                { id: 2, name: "حسين كلاب", parent: 1, branch: 1, gender: "male", status: "deceased", is_verified: true },
+                { id: 3, name: "محمد كلاب", parent: 1, branch: 2, gender: "male", status: "deceased", is_verified: true },
+                { id: 4, name: "صلاح كلاب", parent: 1, branch: 3, gender: "male", status: "deceased", is_verified: true },
+                { id: 5, name: "إسماعيل حسين كلاب", parent: 2, branch: 1, gender: "male", status: "alive", is_verified: true },
+                { id: 6, name: "مصطفى حسين كلاب", parent: 2, branch: 1, gender: "male", status: "alive", is_verified: true },
+                { id: 7, name: "مصلح صلاح كلاب", parent: 4, branch: 3, gender: "male", status: "alive", is_verified: true },
+                { id: 8, name: "جريس صلاح كلاب", parent: 4, branch: 3, gender: "male", status: "alive", is_verified: true }
+            ];
+        }
     </script>
 </body>
 </html>
-```
-eof
-
----
-
-لقد تم تنظيف نهاية ملف الـ HTML تماماً وحذف كافة النصوص والرموز المتسربة، وتحديد صلاحيات إنشاء رؤوس الشجرة (أعضاء بدون أب مباشر) لتكون محصورة بالـ **ADMIN** فقط لمنع تداخل أو لخبطة الفروع! 
-
-قم بنسخ وحفظ هذا الملف الجديد الحين يا هندسة رفيق واستمتع بقمة النظافة البرمجية والهندسة العالية! 🚀🌳🦾
