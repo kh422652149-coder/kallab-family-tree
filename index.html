@@ -161,7 +161,7 @@
             
             <div class="flex flex-wrap items-center justify-center md:justify-end gap-3">
                 <span id="connection-status" class="text-xs font-semibold px-4 py-2 rounded-full border border-yellow-500/50 bg-yellow-500/10 text-yellow-500 shadow-md">
-                    🔄 جاري فحص الاتصال بالسيرفر السحابي...
+                    🔄 جاري فحص الاتصال...
                 </span>
                 <span id="role-badge" class="text-xs font-bold px-4 py-2 rounded-lg border border-blue-500/50 bg-blue-500/10 text-blue-400 shadow-sm">
                     زائر
@@ -172,6 +172,7 @@
             </div>
         </header>
 
+        <!-- Navigation Tabs -->
         <div class="flex flex-wrap gap-2 border-b border-borderColor pb-3">
             <button id="tab-tree" class="active-tab bg-bgCard hover:bg-bgInput text-slate-300 font-bold px-5 py-2.5 rounded-xl text-xs md:text-sm transition duration-150 flex items-center gap-2 border border-borderColor" onclick="switchTab('tree')">
                 🌳 المخطط الشجري
@@ -195,7 +196,6 @@
                     <h3 class="text-base font-bold mb-4 flex items-center gap-2 text-primary border-b border-borderColor pb-3">
                         <span>➕ إضافة عضو جديد للشجرة</span>
                     </h3>
-                    <!-- FORM: Removed "required" from selectors to allow JS-based flexible validation -->
                     <form id="add-member-form" onsubmit="submitNewMember(event)" class="space-y-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1.5">اسم العضو الجديد بالكامل:</label>
@@ -229,7 +229,7 @@
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1.5 font-bold text-yellow-500">يرتبط بـ (الأب المباشر):</label>
                             <select id="new-father-selector" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition">
-                                <!-- Dynamic Parents List loaded directly from live db -->
+                                <!-- Dynamic Parents List loaded directly -->
                             </select>
                         </div>
 
@@ -248,6 +248,19 @@
                     <div id="pending-list" class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                         <p class="text-xs text-slate-400 text-center py-4">لا توجد طلبات معلقة حالياً.</p>
                     </div>
+                </div>
+
+                <!-- Admin Start From Scratch Control (Only visible to ADMIN) -->
+                <div id="admin-reset-card" class="bg-bgCard border border-red-500/30 p-5 rounded-2xl shadow-lg hidden">
+                    <h3 class="text-sm font-bold mb-3 flex items-center gap-2 text-red-400 border-b border-red-500/20 pb-2.5">
+                        <span>⚙️ التحكم المتقدم للمسؤول</span>
+                    </h3>
+                    <p class="text-[10px] text-slate-400 leading-relaxed mb-3">
+                        تتيح لك هذه الميزة تفريغ الشجرة تماماً وحذف كافة الأعضاء للبدء في بناء الشجرة من الأساس والجذر الأول كمسؤول عام.
+                    </p>
+                    <button onclick="resetWholeTreeFromScratch()" class="w-full bg-danger/10 hover:bg-danger border border-danger/40 hover:border-danger text-danger hover:text-white text-[11px] font-bold py-2.5 rounded-xl transition duration-150">
+                        🚨 تصفير الشجرة بالكامل والبدء من الصفر
+                    </button>
                 </div>
 
                 <!-- Statistics Panel -->
@@ -303,6 +316,16 @@
                             <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#111827] border border-slate-500"></span> متوفى رحمه الله</span>
                         </div>
                         
+                        <!-- Empty State Box -->
+                        <div id="tree-empty-state" class="absolute inset-0 bg-bgCard flex flex-col justify-center items-center text-center p-6 space-y-4 z-20 hidden">
+                            <div class="text-6xl">🌱</div>
+                            <h3 class="text-lg font-bold text-slate-200">الشجرة فارغة تماماً حالياً</h3>
+                            <p class="text-xs text-slate-400 max-w-sm leading-relaxed">
+                                بصفتك المسؤول العام، يرجى ملء حقل الإضافة الجانبي لإدخال <br>
+                                <span class="text-primary font-bold">"العضو الأول والأساس الرئيسي للشجرة"</span> للبدء في التفريع.
+                            </p>
+                        </div>
+
                         <div id="tree-canvas" class="w-full h-[650px]"></div>
                     </div>
                 </section>
@@ -327,7 +350,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="members-table-body" class="divide-y divide-borderColor/20 text-slate-200">
-                                    <!-- Dynamic approved members data directly from Postgres -->
+                                    <!-- Dynamic approved members data loaded here -->
                                 </tbody>
                             </table>
                         </div>
@@ -346,7 +369,7 @@
                             <form id="branch-form" onsubmit="submitBranchForm(event)" class="space-y-4">
                                 <input type="hidden" id="branch-edit-id">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">اسم الفرع:</label>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">اسم الفرع الجديد:</label>
                                     <input type="text" id="branch-name" class="w-full bg-bgInput border border-borderColor rounded-xl p-3 text-xs md:text-sm text-slate-200 outline-none focus:border-primary transition" placeholder="مثال: فرع أحمد كلاب" required>
                                 </div>
                                 <div class="flex gap-2">
@@ -387,7 +410,7 @@
         </div>
     </div>
 
-    <!-- Edit Member Modal (Strictly hidden on load using direct display inline style) -->
+    <!-- Edit Member Modal (Strictly hidden on load) -->
     <div id="edit-member-modal" class="modal" style="display: none;">
         <div class="modal-content max-w-md">
             <h3 class="text-base md:text-lg font-bold mb-4 text-primary border-b border-borderColor pb-3">✏️ تعديل بيانات العضو</h3>
@@ -467,6 +490,7 @@
         // Global State Variables
         let networkInstance = null;
         let allFamilyMembers = [];
+        let isUsingLocalStorage = false; // Flag to indicate backup database mode
         
         let currentUserId = null;
         let currentUserRole = "visitor";
@@ -489,6 +513,7 @@
             "100": { pass: "100", role: "viewer", name: "مشاهد عام (زائر)", branch: null }
         };
 
+        // Custom Notification and Alert Helpers
         function showCustomAlert(msg) {
             document.getElementById('custom-alert-text').textContent = msg;
             document.getElementById('custom-alert-modal').style.display = 'flex';
@@ -554,13 +579,15 @@
                 if (response.ok) {
                     statusBadge.className = "text-xs font-semibold px-4 py-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-500 shadow-md";
                     statusBadge.textContent = "🟢 متصل بخادم Python السحابي (Render)";
+                    isUsingLocalStorage = false;
                     return true;
                 } else {
                     throw new Error();
                 }
             } catch (err) {
-                statusBadge.className = "text-xs font-semibold px-4 py-2 rounded-full border border-rose-500/50 bg-rose-500/10 text-rose-500 shadow-md";
-                statusBadge.textContent = "🔴 فشل الاتصال بخادم البايثون";
+                statusBadge.className = "text-xs font-semibold px-4 py-2 rounded-full border border-blue-500/50 bg-blue-500/10 text-blue-400 shadow-md";
+                statusBadge.textContent = "💾 متصل بقاعدة البيانات المحلية (تخزين المتصفح)";
+                isUsingLocalStorage = true;
                 return false;
             }
         }
@@ -634,11 +661,13 @@
                 document.getElementById('pending-approvals-card').classList.add('hidden');
             }
 
-            // Branches management panel is ONLY visible to ADMIN
+            // Branches management panel & advanced reset is ONLY visible to ADMIN
             if (currentUserRole === 'admin') {
                 document.getElementById('tab-branches').classList.remove('hidden');
+                document.getElementById('admin-reset-card').classList.remove('hidden');
             } else {
                 document.getElementById('tab-branches').classList.add('hidden');
+                document.getElementById('admin-reset-card').classList.add('hidden');
             }
         }
 
@@ -654,52 +683,66 @@
             <span class="text-yellow-500 font-semibold">تنبيه: قد يستغرق التشغيل الأول حوالي 50 ثانية إذا كان السيرفر خاملاً. يرجى الانتظار وعدم إغلاق الصفحة.</span>`;
             retryBtn.classList.add('hidden');
 
-            try {
-                const isConnected = await checkSaaSConnection();
-                if (!isConnected) {
-                    throw new Error("SaaS Offline");
+            const isConnected = await checkSaaSConnection();
+
+            if (isConnected) {
+                try {
+                    const resMembers = await fetch(`${API_URL}/family-tree/`);
+                    if (resMembers.ok) {
+                        allFamilyMembers = await resMembers.json();
+                        // Cache locally as backup
+                        localStorage.setItem("kallab_cached_members", JSON.stringify(allFamilyMembers));
+                    }
+                    if (currentUserRole === 'auditor' || currentUserRole === 'admin') {
+                        await loadPendingApprovals();
+                    }
+                } catch (err) {
+                    console.warn("API load failed, fallback to offline local mode.");
+                    loadFromLocalStorage();
                 }
-
-                // Fetch approved family-tree
-                const resMembers = await fetch(`${API_URL}/family-tree/`);
-                if (!resMembers.ok) {
-                    throw new Error("Failed to fetch family tree");
-                }
-                allFamilyMembers = await resMembers.json();
-
-                // If auditor/admin, load pending approvals
-                if (currentUserRole === 'auditor' || currentUserRole === 'admin') {
-                    await loadPendingApprovals();
-                }
-
-                // Render components
-                populateBranchDropdowns();
-                renderHierarchicalTree();
-                renderMembersTable();
-                renderBranchesTable();
-                updateGeneralStats();
-
-                // Success, hide the loader entirely
-                loadingOverlay.style.display = 'none';
-            } catch (err) {
-                console.error("API error: ", err);
-                loadingTitle.textContent = "❌ فشل الاتصال بالسيرفر السحابي";
-                loadingDesc.innerHTML = `لم نتمكن من جلب بيانات الشجرة حالياً.<br>
-                <span class="text-rose-400 font-semibold">يرجى الانتظار حتى يستيقظ السيرفر بالكامل من الخمول ثم اضغط على زر 'إعادة محاولة الاتصال' بالأسفل.</span>`;
-                retryBtn.classList.remove('hidden');
+            } else {
+                // Load from LocalStorage backup instantly
+                loadFromLocalStorage();
             }
+
+            // Populate components
+            populateBranchDropdowns();
+            renderHierarchicalTree();
+            renderMembersTable();
+            renderBranchesTable();
+            updateGeneralStats();
+
+            // Hide loading overlay
+            loadingOverlay.style.display = 'none';
+        }
+
+        function loadFromLocalStorage() {
+            isUsingLocalStorage = true;
+            const cached = localStorage.getItem("kallab_cached_members");
+            if (cached) {
+                allFamilyMembers = JSON.parse(cached);
+            } else {
+                // Initialize default database empty or mock if first time
+                allFamilyMembers = [
+                    { id: 1, name: "صالح محمد يوسف كلاب", spouse: "فاطمة كلاب", parent: null, branch: null, gender: "male", status: "deceased" }
+                ];
+                localStorage.setItem("kallab_cached_members", JSON.stringify(allFamilyMembers));
+            }
+        }
+
+        function saveToLocalStorageBackup() {
+            localStorage.setItem("kallab_cached_members", JSON.stringify(allFamilyMembers));
         }
 
         function populateBranchDropdowns() {
             const newBranchSelector = document.getElementById('new-branch-selector');
             const editBranchSelector = document.getElementById('edit-branch');
 
-            // Keep selections
             const prevNewVal = newBranchSelector.value;
             const prevEditVal = editBranchSelector.value;
 
-            newBranchSelector.innerHTML = '<option value="">-- اختر الفرع --</option>';
-            editBranchSelector.innerHTML = '';
+            newBranchSelector.innerHTML = '<option value="">-- اختر الفرع الرئيسي --</option>';
+            editBranchSelector.innerHTML = '<option value="">-- بلا فرع (الأساس) --</option>';
 
             Object.keys(BRANCHES_MAP).forEach(id => {
                 const optHtml = `<option value="${id}">${BRANCHES_MAP[id]}</option>`;
@@ -715,17 +758,23 @@
             const fatherSelect = document.getElementById('new-father-selector');
             fatherSelect.innerHTML = '';
 
-            // RESTRICTION: Only ADMIN can add a member without selecting a parent (Head of Tree)
+            // If the tree is completely empty, there is absolutely no father
+            if (allFamilyMembers.length === 0) {
+                fatherSelect.innerHTML = '<option value="">[ لا يوجد - هذا هو أساس الشجرة الأول 👑 ]</option>';
+                return;
+            }
+
+            // Only ADMIN can add a member without selecting a parent (Head of Tree)
             if (currentUserRole === 'admin') {
-                fatherSelect.innerHTML += '<option value="">-- لا يوجد (يعتبر رأساً فرعياً جديداً) --</option>';
+                fatherSelect.innerHTML += '<option value="">-- لا يوجد (يعتبر رأساً فرعياً أو أساساً جديداً) --</option>';
             } else {
                 fatherSelect.innerHTML += '<option value="" disabled selected>-- اختر الأب المباشر (إلزامي) --</option>';
             }
 
             const selectedBranchId = parseInt(document.getElementById('new-branch-selector').value);
             
-            // Filter qualified parents (males who are approved) from the list
-            const qualifiedFathers = allFamilyMembers.filter(m => m.gender === 'male' && (!selectedBranchId || m.branch === selectedBranchId));
+            // Filter approved males who can be fathers
+            const qualifiedFathers = allFamilyMembers.filter(m => m.gender === 'male' && (!selectedBranchId || m.branch === selectedBranchId || !m.branch));
             
             qualifiedFathers.forEach(f => {
                 fatherSelect.innerHTML += `<option value="${f.id}">${f.name} (معرّف #${f.id})</option>`;
@@ -745,7 +794,7 @@
 
             const selectedBranchId = parseInt(document.getElementById('edit-branch').value);
             
-            const qualifiedFathers = allFamilyMembers.filter(m => m.gender === 'male' && (!selectedBranchId || m.branch === selectedBranchId));
+            const qualifiedFathers = allFamilyMembers.filter(m => m.gender === 'male' && (!selectedBranchId || m.branch === selectedBranchId || !m.branch));
             
             qualifiedFathers.forEach(f => {
                 const selectedAttr = (f.id === currentParentId) ? 'selected' : '';
@@ -753,14 +802,13 @@
             });
         }
 
-        // Math Recursive Generation Level Engine to force nodes to hang strictly 100% underneath their parents (90 degrees alignment)
         function calculateGenerationLevels(members) {
             let memberMap = {};
             members.forEach(m => {
                 memberMap[m.id] = { ...m, level: null, children: [] };
             });
 
-            // Map parents and children correctly using strictly 'm.parent' returned by python api
+            // Map parents and children correctly
             members.forEach(m => {
                 const parentKey = m.parent;
                 if (parentKey && memberMap[parentKey]) {
@@ -768,7 +816,7 @@
                 }
             });
 
-            // Roots are those with no parent or whose parent is not in our data
+            // Roots are those with no parent or whose parent is not in our list
             let roots = members.filter(m => !m.parent || !memberMap[m.parent]);
 
             function assignLevel(nodeId, currentLevel) {
@@ -789,6 +837,16 @@
 
         function renderHierarchicalTree() {
             const container = document.getElementById('tree-canvas');
+            const emptyState = document.getElementById('tree-empty-state');
+
+            if (allFamilyMembers.length === 0) {
+                emptyState.classList.remove('hidden');
+                container.style.opacity = '0';
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                container.style.opacity = '1';
+            }
             
             // Execute generation calculation
             const leveledMembers = calculateGenerationLevels(allFamilyMembers);
@@ -917,7 +975,7 @@
         }
 
         function resetTreeZoom() {
-            if (networkInstance) {
+            if (networkInstance && allFamilyMembers.length > 0) {
                 networkInstance.fit({
                     animation: { duration: 1000, easingFunction: 'easeInOutQuad' }
                 });
@@ -927,6 +985,11 @@
         function renderMembersTable() {
             const body = document.getElementById('members-table-body');
             body.innerHTML = '';
+
+            if (allFamilyMembers.length === 0) {
+                body.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">لا توجد بيانات معتمدة حالياً.</td></tr>`;
+                return;
+            }
 
             allFamilyMembers.forEach(m => {
                 const branchName = BRANCHES_MAP[m.branch] || 'المركز الرئيسي / الأساس';
@@ -989,12 +1052,10 @@
             const name = document.getElementById('branch-name').value.trim();
 
             if (idVal) {
-                // Edit existing branch
                 const id = parseInt(idVal);
                 BRANCHES_MAP[id] = name;
                 showCustomAlert("✅ تم تحديث اسم الفرع العائلي بنجاح!");
             } else {
-                // Add new branch
                 const nextId = Math.max(...Object.keys(BRANCHES_MAP).map(Number), 0) + 1;
                 BRANCHES_MAP[nextId] = name;
                 showCustomAlert("✅ تم إضافة الفرع العائلي الجديد بنجاح!");
@@ -1045,7 +1106,6 @@
             }
 
             populateEditFatherSelector(member.parent);
-
             document.getElementById('edit-member-modal').style.display = 'flex';
         }
 
@@ -1063,9 +1123,25 @@
             const parentVal = document.getElementById('edit-father').value;
             const parentId = parentVal ? parseInt(parentVal) : null;
 
-            // Validate that non-admins cannot submit a head of tree
             if (!parentId && currentUserRole !== 'admin') {
                 showCustomAlert("⚠️ خطأ صلاحية: يجب تحديد الأب المباشر لغير المسؤول العام!");
+                return;
+            }
+
+            if (isUsingLocalStorage) {
+                // Handle locally
+                const idx = allFamilyMembers.findIndex(m => m.id === id);
+                if (idx !== -1) {
+                    allFamilyMembers[idx].name = name;
+                    allFamilyMembers[idx].gender = gender;
+                    allFamilyMembers[idx].status = status;
+                    allFamilyMembers[idx].branch = branchId;
+                    allFamilyMembers[idx].parent = parentId;
+                    saveToLocalStorageBackup();
+                    showCustomAlert("✅ تم تعديل بيانات العضو بنجاح محلياً!");
+                    hideEditModal();
+                    loadAllData();
+                }
                 return;
             }
 
@@ -1096,7 +1172,7 @@
             const parentVal = document.getElementById('new-father-selector').value;
             const parentId = parentVal ? parseInt(parentVal) : null;
 
-            // FLEXIBLE SMART JS CHECK: 
+            // FLEXIBLE SMART JS CHECK:
             // Only non-admins are strictly forced to select a branch and a direct father.
             // ADMIN can submit with null branch and null father (Head of tree/Root node skips branch completely!).
             if (currentUserRole !== 'admin') {
@@ -1108,6 +1184,26 @@
                     showCustomAlert("⚠️ خطأ صلاحية: يجب اختيار الأب المباشر لإرسال الطلب!");
                     return;
                 }
+            }
+
+            if (isUsingLocalStorage) {
+                // Handle locally
+                const newId = allFamilyMembers.length > 0 ? Math.max(...allFamilyMembers.map(m => m.id)) + 1 : 1;
+                const newMember = {
+                    id: newId,
+                    name: name,
+                    spouse: "",
+                    parent: parentId,
+                    branch: branchId,
+                    gender: gender,
+                    status: status
+                };
+                allFamilyMembers.push(newMember);
+                saveToLocalStorageBackup();
+                showCustomAlert("✨ تم إضافة العضو الجديد بنجاح في قاعدة البيانات المحلية!");
+                document.getElementById('add-member-form').reset();
+                loadAllData();
+                return;
             }
 
             try {
@@ -1125,6 +1221,36 @@
             } catch (err) {
                 showCustomAlert("❌ فشل الاتصال بالخادم السحابي لإرسال الطلب!");
             }
+        }
+
+        function resetWholeTreeFromScratch() {
+            if (currentUserRole !== 'admin') return;
+
+            showCustomConfirm("🚨 تنبيه خطير جداً: هل أنت متأكد تماماً من تصفير الشجرة وحذف كافة أفراد العائلة للبدء مجدداً من الصفر المطلق؟ لا يمكن التراجع عن هذا الإجراء!", async () => {
+                if (isUsingLocalStorage) {
+                    allFamilyMembers = [];
+                    saveToLocalStorageBackup();
+                    showCustomAlert("🌱 تم تصفير الشجرة بنجاح! يمكنك الآن ملء النموذج الجانبي لإضافة أساس الشجرة وجذرها الأول.");
+                    loadAllData();
+                    return;
+                }
+
+                // If cloud is connected, we wipe local cache and attempt to delete via APIs
+                try {
+                    // For the cloud API, we delete all items sequentially or flag them
+                    for (let m of allFamilyMembers) {
+                        await fetch(`${API_URL}/delete-member/${m.id}?user_role=${currentUserRole}`, { method: 'DELETE' });
+                    }
+                    showCustomAlert("🌱 تم تصفير الشجرة بالكامل سحابياً! يمكنك البدء بإضافة رأس الشجرة الأول.");
+                    loadAllData();
+                } catch (err) {
+                    // Fallback to local reset if API fails
+                    allFamilyMembers = [];
+                    saveToLocalStorageBackup();
+                    showCustomAlert("🌱 تم تصفير الشجرة بنجاح محلياً.");
+                    loadAllData();
+                }
+            });
         }
 
         async function loadPendingApprovals() {
@@ -1176,11 +1302,19 @@
         }
 
         async function deleteMember(id) {
-            showCustomConfirm("⚠️ هل أنت متأكد من حذف/رفض هذا السجل نهائياً من الشجرة وقاعدة البيانات السحابية؟", async () => {
+            showCustomConfirm("⚠️ هل أنت متأكد من حذف/رفض هذا السجل نهائياً من الشجرة وقاعدة البيانات؟", async () => {
+                if (isUsingLocalStorage) {
+                    allFamilyMembers = allFamilyMembers.filter(m => m.id !== id);
+                    saveToLocalStorageBackup();
+                    showCustomAlert("🗑️ تم حذف السجل بنجاح من قاعدة البيانات المحلية!");
+                    loadAllData();
+                    return;
+                }
+
                 try {
                     const response = await fetch(`${API_URL}/delete-member/${id}?user_role=${currentUserRole}`, { method: 'DELETE' });
                     if (response.ok) {
-                        showCustomAlert("🗑️ تم حذف السجل بنجاح من قاعدة البيانات!");
+                        showCustomAlert("🗑️ تم حذف السجل بنجاح من قاعدة البيانات السحابية!");
                         loadAllData();
                     } else {
                         const data = await response.json();
@@ -1210,11 +1344,11 @@
                 document.getElementById('tab-table').classList.add('active-tab');
             } else if (tabId === 'branches') {
                 document.getElementById('panel-branches').classList.remove('hidden');
+                document.getElementById('tab-branches').classList.add('add-member-card');
                 document.getElementById('tab-branches').classList.add('active-tab');
             }
         }
 
-        // Stats UI updates
         function updateGeneralStats() {
             document.getElementById('stat-total').textContent = allFamilyMembers.length;
             document.getElementById('stat-males').textContent = allFamilyMembers.filter(m => m.gender === 'male').length;
